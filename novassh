@@ -1,0 +1,34 @@
+#!/bin/sh -x
+
+# Script which opens ssh connection to a openstack instance with
+# name containing $1.
+# It will try find the instance and then a corresponding floating IP.
+#
+# For instance if you have instance called "tomktest_f978", then
+# $ novassh f978
+# will open ssh connection to the instance
+# (as long as the key is ok, network is working, and the username is
+# guessed properly)
+
+PRIVKEY=/home/tomk/keys/tkarasek_key.pem
+
+
+[ "$#" -ne "1" ] && echo "do rather $0 <instance_name>" && exit 1
+
+ID=$(nova list | grep $1 | cut -f 2 -d' ')
+
+[ -z "$ID" ] && echo "instance with name $1 not found" && exit 1
+
+SSHUSER=root
+
+if nova show $ID | grep image | grep -q -i ubuntu; then
+    SSHUSER=ubuntu
+fi
+
+IP=$(nova floating-ip-list | grep $ID | cut -f 2 -d' ')
+
+echo "Found ip is $IP"
+
+ssh -i $PRIVKEY ${SSHUSER}@${IP} || \
+    echo "You might try different user (root/ubuntu/..)"
+

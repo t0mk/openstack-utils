@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+"""
+Wrapper of nova API boot call that assigns a floating ip to an instance.
+It spares you from assigning a floating IPto the new instance after
+"nova boot".
+
+See the source first, mainly variables
+BASE_NAME
+BASE_IMAGE
+KEYPAIR_NAME
+
+The script takes credentials, tenant name and Keystone URL from the usual
+environment variables. Currently it has one argument: -u/--userdata for
+passing a file with uesrdata, but it can be easily extended with other
+arguments.
+
+"""
+
+import os
+import sys
+import uuid
+import time
+import pprint
+import argparse
+import novaclient.v1_1
+import logging
+import subprocess
+
+
+logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(levelname)s:%(name)s: %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+logger.setLevel(logging.DEBUG)
+
+
+BASE_NAME = 'tomktest'
+BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
+KEYPAIR_NAME = 'tkarasek_key'
+
+
+_USERNAME = os.environ['OS_USERNAME']
+_PASSWORD = os.environ['OS_PASSWORD']
+_TENANT = os.environ['OS_TENANT_NAME']
+_AUTH_URL = os.environ['OS_AUTH_URL']
+
+
+i = lambda s: logger.info(s)
+d = lambda s: logger.debug(s)
+
+
+class NovaWrapperError(Exception):
+    pass
+
+
+class NovaProxy(object):
+    _client = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._client:
+            cls._client = novaclient.v1_1.client.Client(
+                username=_USERNAME, api_key=_PASSWORD,
+                auth_url=_AUTH_URL, project_id=_TENANT)
+        return cls._client
+
+
+def callCheck(command, env=None, stdin=None):
+    i("about to run \"%s\"" % command)
+    if subprocess.call(command.split(), env=env, stdin=stdin):
+        raise Exception("%s failed." % command)
+
+
+def get_a_free_floating_ip():
+    free_ips = [ ip for ip in NovaProxy().floating_ips.list()
+                 if ip.instance_id is None ]
+    if len(free_ips) == 0:
+        raise NovaWrapperError("No free floating IP")
+    return free_ips[0]
+
+
+def find_server_with_id(server_id):
+    found = [ s for s in NovaProxy().servers.list() if s.id == server_id ]
+    if not found:
+        raise NovaWrapperError("No server with id %s" % server_id)
+    return found[0]
+
+
+def server_has_a_fixed_ip(server_id):
+    server = find_server_with_id(server_id)
+    attached_nets = server.networks
+    if not attached_nets:
+        return False
+    for net in attached_nets.values():
+        if len(net) > 0:
+            i("Server %s has fixed IP %s" % (server_id, net))
+            return True
+    return False
+
+
+if __name__ == '__main__':
+
+    _name = BASE_NAME + uuid.uuid4().hex[:4]
+
+    parser = argparse.ArgumentParser(
+        description='smarter nova boot')
+
+    help_userdata = "File with userdata for cloudinit"
+    help_test = "Avoid all calls changing states in OpenStack"
+
+    parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
+                        help=help_userdata)
+
+    parser.add_argument('-t', '--test', default=False, action="store_true",
+                        help=help_test)
+
+    args = parser.parse_args()
+    params = {'name': _name, 'image': BASE_IMAGE, 'flavor': 1,
+              'key_name': KEYPAIR_NAME, 'userdata': args.userdata}
+    i("Launching new server with parameters:\n%s" % pprint.pformat(params))
+
+    if not args.test:
+        new_server = NovaProxy().servers.create(**params)
+        i("Created new server with id " + new_server.id)
+
+        i("About to assign a floating IP. For that, we need to wait till "
+          "the vm will show a fixed IP address..")
+
+        while not server_has_a_fixed_ip(new_server.id):
+            time.sleep(1)
+
+        free_ip = get_a_free_floating_ip()
+
+        i("Assigning floating IP %s to the new server" % free_ip)
+
+        new_server.add_floating_ip(free_ip)
+
+        callCheck("nova show " + new_server.id)
