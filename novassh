@@ -6,9 +6,13 @@
 #
 # For instance if you have instance called "tomktest_f978", then
 # $ novassh f978
-# will open ssh connection to the instance
-# (as long as the key is ok, network is working, and the username is
-# guessed properly)
+# will open ssh connection to the instance. It will match first 
+# instance matching the name (first in nova list, so probably the
+# latest one),
+#
+# In order for the script to work, the key mjust be ok, network must
+# be working. The script will attempt to ssh as root. If it detects
+# Ubuntu image, it will ssh as "ubuntu".
 
 PRIVKEY=/home/tomk/keys/tkarasek_key.pem
 
