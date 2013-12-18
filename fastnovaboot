@@ -99,7 +99,7 @@ def server_has_a_fixed_ip(server_id):
 
 if __name__ == '__main__':
 
-    _name = BASE_NAME + uuid.uuid4().hex[:4]
+    _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
 
     parser = argparse.ArgumentParser(
         description='smarter nova boot')
