@@ -106,6 +106,9 @@ if __name__ == '__main__':
 
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
+    help_name = "name for the new server (optional)"
+
+    parser.add_argument('-n', '--name', help=help_name)
 
     parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
                         help=help_userdata)
@@ -114,6 +117,10 @@ if __name__ == '__main__':
                         help=help_test)
 
     args = parser.parse_args()
+
+    if args.name:
+        _name = args.name
+
     params = {'name': _name, 'image': BASE_IMAGE, 'flavor': 1,
               'key_name': KEYPAIR_NAME, 'userdata': args.userdata}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
