@@ -19,6 +19,7 @@ arguments.
 import os
 import sys
 import uuid
+import regex
 import time
 import pprint
 import argparse
@@ -36,7 +37,8 @@ logger.setLevel(logging.DEBUG)
 
 
 BASE_NAME = 'tomktest'
-BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
+#BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
+BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
 KEYPAIR_NAME = 'tkarasek_key'
 
 
@@ -100,6 +102,7 @@ def server_has_a_fixed_ip(server_id):
 if __name__ == '__main__':
 
     _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
+    _image = BASE_IMAGE
 
     parser = argparse.ArgumentParser(
         description='smarter nova boot')
@@ -107,8 +110,10 @@ if __name__ == '__main__':
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
     help_name = "name for the new server (optional)"
+    help_image = "name or id of image to boot from"
 
     parser.add_argument('-n', '--name', help=help_name)
+    parser.add_argument('-i', '--image', help=help_image)
 
     parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
                         help=help_userdata)
@@ -120,8 +125,25 @@ if __name__ == '__main__':
 
     if args.name:
         _name = args.name
+    if args.image:
+        _image = args.image
 
-    params = {'name': _name, 'image': BASE_IMAGE, 'flavor': 1,
+    # if given image name is uuid, all is good and we can pass it to nova boot
+    # if not, we need to find the image with matching name and retrieve its id
+    try:
+        uuid.UUID(_image)
+    except ValueError:
+        matching = [im for im in NovaProxy().images.list() if _image in im.name]
+        if len(matching) == 0:
+            raise NovaWrapperError(
+                "Could not find any image matcihing name '%s'" % _image)
+        if len(matching) > 1:
+            raise NovaWrapperError(
+                "Found too many images matching name '%s': %s" %
+                (_image, matching))
+        _image = matching[0]
+
+    params = {'name': _name, 'image': _image, 'flavor': 1,
               'key_name': KEYPAIR_NAME, 'userdata': args.userdata}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
