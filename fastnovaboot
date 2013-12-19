@@ -48,8 +48,8 @@ _TENANT = os.environ['OS_TENANT_NAME']
 _AUTH_URL = os.environ['OS_AUTH_URL']
 
 
-i = lambda s: logger.info(s)
-d = lambda s: logger.debug(s)
+i = logger.info
+d = logger.debug
 
 
 class NovaWrapperError(Exception):
