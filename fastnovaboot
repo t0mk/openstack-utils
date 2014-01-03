@@ -72,12 +72,28 @@ def callCheck(command, env=None, stdin=None):
     if subprocess.call(command.split(), env=env, stdin=stdin):
         raise Exception("%s failed." % command)
 
+def get_free_floating_ips():
+    return [ ip for ip in NovaProxy().floating_ips.list()
+             if ip.instance_id is None ]
 
-def get_a_free_floating_ip():
-    free_ips = [ ip for ip in NovaProxy().floating_ips.list()
-                 if ip.instance_id is None ]
+
+def dig_a_floating_ip():
+    free_ips = get_free_floating_ips()
     if len(free_ips) == 0:
-        raise NovaWrapperError("No free floating IP")
+        i("There are no free allocated floating IPs. The script will attempt "
+          "to get one from the first available pool.")
+        pool_name = NovaProxy().floating_ip_pools.list()[0].name
+        i("Found pool %s, will try to allocate one floating IP from it"
+          % pool_name)
+        try:
+            NovaProxy().floating_ips.create(pool=pool_name)
+        except Exception as e:
+            # TODO: check what exception this throws
+            logger.error("Most likely no more IPs in the pool %s" % pool_name)
+            raise e
+        free_ips = get_free_floating_ips()
+        i("A floating IP was allocated from the pool and will be assigned to"
+          "the new instance.")
     return free_ips[0]
 
 
@@ -159,7 +175,7 @@ if __name__ == '__main__':
         while not server_has_a_fixed_ip(new_server.id):
             time.sleep(1)
 
-        free_ip = get_a_free_floating_ip()
+        free_ip = dig_a_floating_ip()
 
         i("Assigning floating IP %s to the new server" % free_ip)
 
