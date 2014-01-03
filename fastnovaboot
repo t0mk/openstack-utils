@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Wrapper of nova API boot call that assigns a floating ip to an instance.
 It spares you from assigning a floating IPto the new instance after
@@ -16,25 +17,12 @@ See
 $ fastnovaboot --help
 """
 
-import os
-import sys
 import uuid
-import regex
 import time
 import pprint
 import argparse
-import novaclient.v1_1
-import logging
-import subprocess
 
-
-logger = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(levelname)s:%(name)s: %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-logger.setLevel(logging.DEBUG)
-
+import util
 
 BASE_NAME = 'tomktest'
 #BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
@@ -42,38 +30,13 @@ BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
 KEYPAIR_NAME = 'tkarasek_key'
 BASE_FLAVOR = 1
 
+i = util.logger.info
+d = util.logger.debug
 
-_USERNAME = os.environ['OS_USERNAME']
-_PASSWORD = os.environ['OS_PASSWORD']
-_TENANT = os.environ['OS_TENANT_NAME']
-_AUTH_URL = os.environ['OS_AUTH_URL']
-
-
-i = logger.info
-d = logger.debug
-
-
-class NovaWrapperError(Exception):
-    pass
-
-
-class NovaProxy(object):
-    _client = None
-    def __new__(cls, *args, **kwargs):
-        if not cls._client:
-            cls._client = novaclient.v1_1.client.Client(
-                username=_USERNAME, api_key=_PASSWORD,
-                auth_url=_AUTH_URL, project_id=_TENANT)
-        return cls._client
-
-
-def callCheck(command, env=None, stdin=None):
-    i("about to run \"%s\"" % command)
-    if subprocess.call(command.split(), env=env, stdin=stdin):
-        raise Exception("%s failed." % command)
+_nova = util.NovaProxy
 
 def get_free_floating_ips():
-    return [ ip for ip in NovaProxy().floating_ips.list()
+    return [ ip for ip in _nova().floating_ips.list()
              if ip.instance_id is None ]
 
 
@@ -82,14 +45,15 @@ def dig_a_floating_ip():
     if len(free_ips) == 0:
         i("There are no free allocated floating IPs. The script will attempt "
           "to get one from the first available pool.")
-        pool_name = NovaProxy().floating_ip_pools.list()[0].name
+        pool_name = _nova().floating_ip_pools.list()[0].name
         i("Found pool %s, will try to allocate one floating IP from it"
           % pool_name)
         try:
-            NovaProxy().floating_ips.create(pool=pool_name)
+            _nova().floating_ips.create(pool=pool_name)
         except Exception as e:
             # TODO: check what exception this throws
-            logger.error("Most likely no more IPs in the pool %s" % pool_name)
+            util.logger.error("Most likely no more IPs in the pool %s"
+                               % pool_name)
             raise e
         free_ips = get_free_floating_ips()
         i("A floating IP was allocated from the pool and will be assigned to"
@@ -98,9 +62,9 @@ def dig_a_floating_ip():
 
 
 def find_server_with_id(server_id):
-    found = [ s for s in NovaProxy().servers.list() if s.id == server_id ]
+    found = [ s for s in _nova().servers.list() if s.id == server_id ]
     if not found:
-        raise NovaWrapperError("No server with id %s" % server_id)
+        raise util.NovaWrapperError("No server with id %s" % server_id)
     return found[0]
 
 
@@ -151,22 +115,22 @@ if __name__ == '__main__':
     try:
         uuid.UUID(_image)
     except ValueError:
-        matching = [im for im in NovaProxy().images.list() if _image in im.name]
+        matching = [im for im in _nova().images.list() if _image in im.name]
         if len(matching) == 0:
-            raise NovaWrapperError(
+            raise util.NovaWrapperError(
                 "Could not find any image matcihing name '%s'" % _image)
         if len(matching) > 1:
-            raise NovaWrapperError(
+            raise util.NovaWrapperError(
                 "Found too many images matching name '%s': %s" %
                 (_image, matching))
         _image = matching[0]
 
     params = {'name': args.name, 'image': _image, 'flavor': args.flavor,
-              'key_name': KEYPAIR_NAME, 'userdata': args.userdata}
+              'key_name': util.KEYPAIR, 'userdata': args.userdata}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
     if not args.test:
-        new_server = NovaProxy().servers.create(**params)
+        new_server = _nova().servers.create(**params)
         i("Created new server with id " + new_server.id)
 
         i("About to assign a floating IP. For that, we need to wait till "
@@ -181,4 +145,4 @@ if __name__ == '__main__':
 
         new_server.add_floating_ip(free_ip)
 
-        callCheck("nova show " + new_server.id)
+        util.callCheck("nova show " + new_server.id)
