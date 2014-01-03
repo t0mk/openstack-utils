@@ -28,7 +28,7 @@ BASE_NAME = 'tomktest'
 #BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
 BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
 KEYPAIR_NAME = 'tkarasek_key'
-BASE_FLAVOR = 1
+BASE_FLAVOR = "m1.tiny"
 
 i = util.logger.info
 d = util.logger.debug
@@ -79,6 +79,22 @@ def server_has_a_fixed_ip(server_id):
             return True
     return False
 
+def find_resource_id_by_name(name, resource_list):
+    try:
+        uuid.UUID(name)
+        # name is uuid
+        return name
+    except ValueError:
+        matching = [r.id for r in resource_list() if name in r.name]
+        if len(matching) == 0:
+            raise util.NovaWrapperError(
+                "Could not find any resource matcihing name '%s'" % name)
+        if len(matching) > 1:
+            raise util.NovaWrapperError(
+                "Found too many resources matching name '%s': %s" %
+                (name, matching))
+        return matching[0]
+
 
 if __name__ == '__main__':
 
@@ -93,7 +109,7 @@ if __name__ == '__main__':
     help_name = ("name for the new server. Default is %s-<4 random hex chars>"
                  % BASE_NAME)
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
-    help_flavor = ("id of flavor ($ nova flavor-list'), default is %s "
+    help_flavor = ("name of flavor ($ nova flavor-list'), default is %s "
                  % BASE_FLAVOR)
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
@@ -108,7 +124,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    _image = args.image
+    _image = find_resource_id_by_name(args.image, _nova().images.list)
+    _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
 
     # if given image name is uuid, all is good and we can pass it to nova boot
     # if not, we need to find the image with matching name and retrieve its id
@@ -125,7 +142,7 @@ if __name__ == '__main__':
                 (_image, matching))
         _image = matching[0]
 
-    params = {'name': args.name, 'image': _image, 'flavor': args.flavor,
+    params = {'name': args.name, 'image': _image, 'flavor': _flavor,
               'key_name': util.KEYPAIR, 'userdata': args.userdata}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
