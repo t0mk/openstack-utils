@@ -10,10 +10,10 @@ BASE_IMAGE
 KEYPAIR_NAME
 
 The script takes credentials, tenant name and Keystone URL from the usual
-environment variables. Currently it has one argument: -u/--userdata for
-passing a file with uesrdata, but it can be easily extended with other
-arguments.
+environment variables.
 
+See
+$ fastnovaboot --help
 """
 
 import os
@@ -40,6 +40,7 @@ BASE_NAME = 'tomktest'
 #BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
 BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
 KEYPAIR_NAME = 'tkarasek_key'
+BASE_FLAVOR = 1
 
 
 _USERNAME = os.environ['OS_USERNAME']
@@ -102,18 +103,22 @@ def server_has_a_fixed_ip(server_id):
 if __name__ == '__main__':
 
     _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
-    _image = BASE_IMAGE
+
 
     parser = argparse.ArgumentParser(
         description='smarter nova boot')
 
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
-    help_name = "name for the new server (optional)"
-    help_image = "name or id of image to boot from"
+    help_name = ("name for the new server. Default is %s-<4 random hex chars>"
+                 % BASE_NAME)
+    help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
+    help_flavor = ("id of flavor ($ nova flavor-list'), default is %s "
+                 % BASE_FLAVOR)
 
-    parser.add_argument('-n', '--name', help=help_name)
-    parser.add_argument('-i', '--image', help=help_image)
+    parser.add_argument('-n', '--name', help=help_name, default=_name)
+    parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
+    parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
 
     parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
                         help=help_userdata)
@@ -123,10 +128,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.name:
-        _name = args.name
-    if args.image:
-        _image = args.image
+    _image = args.image
 
     # if given image name is uuid, all is good and we can pass it to nova boot
     # if not, we need to find the image with matching name and retrieve its id
@@ -143,7 +145,7 @@ if __name__ == '__main__':
                 (_image, matching))
         _image = matching[0]
 
-    params = {'name': _name, 'image': _image, 'flavor': 1,
+    params = {'name': args.name, 'image': _image, 'flavor': args.flavor,
               'key_name': KEYPAIR_NAME, 'userdata': args.userdata}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
