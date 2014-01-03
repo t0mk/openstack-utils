@@ -1,38 +1,94 @@
-#!/bin/sh -x
+#!/usr/bin/python
 
 # Script which opens ssh connection to a openstack instance with
 # name containing $1.
 # It will try find the instance and then a corresponding floating IP.
 #
-# For instance if you have instance called "tomktest_f978", then
+# For example if you have instance called "tomktest_f978", then
 # $ novassh f978
-# will open ssh connection to the instance. It will match first 
+# will open ssh connection to the instance. It will match first
 # instance matching the name (first in nova list, so probably the
 # latest one),
 #
-# In order for the script to work, the key mjust be ok, network must
+# In order for the script to work, the key must be ok, network must
 # be working. The script will attempt to ssh as root. If it detects
 # Ubuntu image, it will ssh as "ubuntu".
 
-PRIVKEY=/home/tomk/keys/tkarasek_key.pem
+import argparse
+
+import util
+
+PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
 
 
-[ "$#" -ne "1" ] && echo "do rather $0 <instance_name>" && exit 1
+i = util.logger.info
 
-ID=$(nova list | grep $1 | cut -f 2 -d' ')
 
-[ -z "$ID" ] && echo "instance with name $1 not found" && exit 1
+def get_floating_ip_of_instance(instance_id):
+    ips = [ip for ip in _nova().floating_ips.list()
+           if ip.instance_id == instance_id]
+    if not ips:
+        raise util.NovaWrapperError("Instance %s does not have a floating IP"
+                                    % instance_id)
+    return ips[0]
 
-SSHUSER=root
 
-if nova show $ID | grep image | grep -q -i ubuntu; then
-    SSHUSER=ubuntu
-fi
+def check_port_open(vm, port):
+    secgroup_names = [sg['name'] for sg in vm.security_groups]
 
-IP=$(nova floating-ip-list | grep $ID | cut -f 2 -d' ')
+    secgroups = [sg for sg in _nova().security_groups.list()
+                 if sg.name in secgroup_names]
+    relevant_rules = sum([sg.rules for sg in secgroups], [])
+    for rule in relevant_rules:
+        if rule['from_port'] and rule['to_port']:
+            if rule['from_port'] <= port <= rule['to_port']:
+                return True
+    return False
 
-echo "Found ip is $IP"
 
-ssh -i $PRIVKEY ${SSHUSER}@${IP} || \
-    echo "You might try different user (root/ubuntu/..)"
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='smart ssh to a nova instance')
+
+    help_nosshcheck = ('Dont check if machine has port 22 open in some '
+                       'security group.')
+
+    parser.add_argument('instance_name', help='name of instance to ssh to')
+    parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    _nova = util.NovaProxy
+
+    matching_vms = [ m for m in _nova().servers.list()
+                     if args.instance_name in m.name ]
+
+    if not matching_vms:
+        raise util.NovaWrapperError("no vm matches name %s"
+                                    % args.instance_name)
+
+    vm = matching_vms[0]
+
+    i("Will attempt to ssh to instance %s" % vm)
+
+    ssh_user = 'root'
+
+    image_name = _nova().images.get(vm.image['id']).name
+
+    if 'ubuntu' in image_name.lower():
+        ssh_user = 'ubuntu'
+
+
+    fip = get_floating_ip_of_instance(vm.id)
+
+    if not args.nosshcheck:
+        if not check_port_open(vm, 22):
+            raise util.NovaWrapperError("Port 22 is not open in any security "
+                                        "group in the machine.")
+
+    ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
+    util.callCheck(ssh_cmd)
+
+
 
