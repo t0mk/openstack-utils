@@ -21,6 +21,7 @@ import uuid
 import time
 import pprint
 import argparse
+import json
 
 import util
 
@@ -107,6 +108,10 @@ if __name__ == '__main__':
 
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
+    help_meta = ("JSON dict with additional meta-data. Up to 5 items. "
+                 "Enclose the whole argument to single quotes and string "
+                 "literals in it to double quotes. I.e. OK: '{\"a\": 5}', "
+                 "NOT OK: \"{'a': 5}\"")
     help_name = ("name for the new server. Default is %s-<4 random hex chars>"
                  % BASE_NAME)
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
@@ -116,6 +121,7 @@ if __name__ == '__main__':
                       "should be. Default is %s." % BASE_SECGROUPS)
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
+    parser.add_argument('-m', '--meta', help=help_meta)
     parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
     parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
 
@@ -154,6 +160,15 @@ if __name__ == '__main__':
     params = {'name': args.name, 'image': _image, 'flavor': _flavor,
               'key_name': util.KEYPAIR, 'userdata': args.userdata,
               'security_groups': args.secgroups}
+
+    if args.meta:
+        _meta_dict = json.loads(args.meta)
+        if type(_meta_dict) != dict:
+            raise NovaWrapperError("the --meta parameter must be a json dict")
+        if len(_meta_dict) > 5:
+            raise NovaWrapperError("the meta dict can't have more than 5 items")
+        params['meta'] = _meta_dict
+
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
     if not args.test:
