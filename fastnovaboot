@@ -108,10 +108,11 @@ if __name__ == '__main__':
 
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
-    help_meta = ("JSON dict with additional meta-data. Up to 5 items. "
+    help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
+                 "and values must be only strings - no numbers."
                  "Enclose the whole argument to single quotes and string "
-                 "literals in it to double quotes. I.e. OK: '{\"a\": 5}', "
-                 "NOT OK: \"{'a': 5}\"")
+                 "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
+                 "NOT OK: \"{'a': '5'}\" ")
     help_name = ("name for the new server. Default is %s-<4 random hex chars>"
                  % BASE_NAME)
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
