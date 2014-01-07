@@ -28,7 +28,8 @@ BASE_NAME = 'tomktest'
 #BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
 BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
 KEYPAIR_NAME = 'tkarasek_key'
-BASE_FLAVOR = "m1.tiny"
+BASE_FLAVOR = 'm1.tiny'
+BASE_SECGROUPS = ['default']
 
 i = util.logger.info
 d = util.logger.debug
@@ -111,6 +112,8 @@ if __name__ == '__main__':
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
     help_flavor = ("name of flavor ($ nova flavor-list'), default is %s "
                  % BASE_FLAVOR)
+    help_secgroups = ("List of security groups which in which the instance "
+                      "should be. Default is %s." % BASE_SECGROUPS)
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
     parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
@@ -121,6 +124,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-t', '--test', default=False, action="store_true",
                         help=help_test)
+    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
+                        default=BASE_SECGROUPS)
 
     args = parser.parse_args()
 
@@ -142,8 +147,13 @@ if __name__ == '__main__':
                 (_image, matching))
         _image = matching[0]
 
+    if args.test:
+        print "args are"
+        print args
+
     params = {'name': args.name, 'image': _image, 'flavor': _flavor,
-              'key_name': util.KEYPAIR, 'userdata': args.userdata}
+              'key_name': util.KEYPAIR, 'userdata': args.userdata,
+              'security_groups': args.secgroups}
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
     if not args.test:
