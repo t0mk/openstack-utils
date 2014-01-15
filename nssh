@@ -54,6 +54,7 @@ if __name__ == "__main__":
                        'security group.')
 
     parser.add_argument('instance_name', help='name of instance to ssh to')
+    parser.add_argument('-u','--user', help='user for ssh')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
                         action='store_true')
 
@@ -72,13 +73,15 @@ if __name__ == "__main__":
 
     i("Will attempt to ssh to instance %s" % vm)
 
-    ssh_user = 'root'
+    if not args.user:
+        ssh_user = 'root'
 
-    image_name = _nova().images.get(vm.image['id']).name
+        image_name = _nova().images.get(vm.image['id']).name
 
-    if 'ubuntu' in image_name.lower():
-        ssh_user = 'ubuntu'
-
+        if 'ubuntu' in image_name.lower():
+            ssh_user = 'ubuntu'
+    else:
+        ssh_user = args.user
 
     fip = get_floating_ip_of_instance(vm.id)
 
