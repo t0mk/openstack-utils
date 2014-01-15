@@ -10,7 +10,7 @@
 #
 # create security group called "testenv" and populate with rules opening
 # 80,443 and 22 to 212.68.9.98/32 193.166.24.0/23
-# $ managesecgroup -n testsecgroup -c -p 80 443 22 \
+# $ managesecgroup -n testenv -c -p 80 443 22 \
 #                  -i 212.68.9.98/32 193.166.24.0/23
 
 import argparse
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='smart security group handling')
 
-    help_create = 'create the security groupi first'
+    help_create = 'create the security group first'
 
     parser.add_argument('-c', '--create', help=help_create, default=False,
                         action='store_true')
