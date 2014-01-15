@@ -1,0 +1,13 @@
+#!/bin/sh -x
+
+# script that deletes all vms in current tenant
+# if an argument is passed, only vms with mathcing names are deleted
+
+GREPEXP='\-4'
+
+[ -n "$1" ] && GREPEXP=$1
+
+for i in $(nova list | grep $GREPEXP | cut -f 2 -d ' '); do
+    nova delete $i
+done
+

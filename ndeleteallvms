@@ -1,8 +1,0 @@
-#!/bin/sh -x
-
-# script that deletes all vms in current tenant
-
-for i in $(nova list | grep '\-4' | cut -f 2 -d ' '); do
-    nova delete $i
-done
-
