@@ -11,7 +11,7 @@ _TENANT = os.environ['OS_TENANT_NAME']
 _AUTH_URL = os.environ['OS_AUTH_URL']
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('os_utils')
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(levelname)s:%(name)s: %(message)s')
 ch.setFormatter(formatter)
