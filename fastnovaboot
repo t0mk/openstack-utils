@@ -118,11 +118,13 @@ if __name__ == '__main__':
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
     help_flavor = ("name of flavor ($ nova flavor-list'), default is %s "
                  % BASE_FLAVOR)
-    help_secgroups = ("List of security groups which in which the instance "
-                      "should be. Default is %s." % BASE_SECGROUPS)
+    help_secgroups = ("Comma-separated list of security groups which in which "
+                      "the instance should be. Default is %s." % BASE_SECGROUPS)
+    help_groups = ("Comma-separated list of host groups that you want the "
+                   "host to belong. This is completely up to the user, and it "
+                   "not checked for validity. ")
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
-    parser.add_argument('-m', '--meta', help=help_meta)
     parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
     parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
 
@@ -133,26 +135,12 @@ if __name__ == '__main__':
                         help=help_test)
     parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
                         default=BASE_SECGROUPS)
-
+    parser.add_argument('-m', '--meta', help=help_meta)
+    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
     args = parser.parse_args()
 
-    _image = find_resource_id_by_name(args.image, _nova().images.list)
+    _image  = find_resource_id_by_name(args.image, _nova().images.list)
     _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
-
-    # if given image name is uuid, all is good and we can pass it to nova boot
-    # if not, we need to find the image with matching name and retrieve its id
-    try:
-        uuid.UUID(_image)
-    except ValueError:
-        matching = [im for im in _nova().images.list() if _image in im.name]
-        if len(matching) == 0:
-            raise util.NovaWrapperError(
-                "Could not find any image matcihing name '%s'" % _image)
-        if len(matching) > 1:
-            raise util.NovaWrapperError(
-                "Found too many images matching name '%s': %s" %
-                (_image, matching))
-        _image = matching[0]
 
     if args.test:
         print "args are"
@@ -170,9 +158,19 @@ if __name__ == '__main__':
             raise NovaWrapperError("the meta dict can't have more than 5 items")
         params['meta'] = _meta_dict
 
+    if args.groups:
+        if 'meta' not in params:
+            params['meta'] = {}
+        params['meta'][u'groups'] = list(args.groups)
+        if len(params['meta']) > 5:
+            raise NovaWrapperError("the meta dict can't have more than 5 "
+                                   "items, including the group item")
+
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
-    if not args.test:
+    if args.test:
+        i("This is a test run, _NOT_ booting the instance.")
+    else:
         new_server = _nova().servers.create(**params)
         i("Created new server with id " + new_server.id)
 
