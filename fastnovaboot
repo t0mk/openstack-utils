@@ -118,9 +118,9 @@ if __name__ == '__main__':
     help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
     help_flavor = ("name of flavor ($ nova flavor-list'), default is %s "
                  % BASE_FLAVOR)
-    help_secgroups = ("Comma-separated list of security groups which in which "
+    help_secgroups = ("Space-separated list of security groups which in which "
                       "the instance should be. Default is %s." % BASE_SECGROUPS)
-    help_groups = ("Comma-separated list of host groups that you want the "
+    help_groups = ("Space-separated list of host groups that you want the "
                    "host to belong. This is completely up to the user, and it "
                    "not checked for validity. ")
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     if args.groups:
         if 'meta' not in params:
             params['meta'] = {}
-        params['meta'][u'groups'] = list(args.groups)
+        params['meta'][u'groups'] = ",".join(args.groups)
         if len(params['meta']) > 5:
             raise NovaWrapperError("the meta dict can't have more than 5 "
                                    "items, including the group item")
