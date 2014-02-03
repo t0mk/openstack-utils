@@ -109,7 +109,7 @@ if __name__ == '__main__':
     help_userdata = "File with userdata for cloudinit"
     help_test = "Avoid all calls changing states in OpenStack"
     help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
-                 "and values must be only strings - no numbers."
+                 "and values must be only strings - no numbers or lists."
                  "Enclose the whole argument to single quotes and string "
                  "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
                  "NOT OK: \"{'a': '5'}\" ")
@@ -177,8 +177,16 @@ if __name__ == '__main__':
         i("About to assign a floating IP. For that, we need to wait till "
           "the vm will show a fixed IP address..")
 
-        while not server_has_a_fixed_ip(new_server.id):
+        server_id = new_server.id
+
+        while not server_has_a_fixed_ip(server_id):
+            status = _nova().servers.get(server_id).status
+            if status == 'ERROR':
+                raise util.NovaWrapperError('Server got to ERROR status.')
+            if status != 'BUILD':
+                i("Server in weird status: %s" % status)
             time.sleep(1)
+
 
         free_ip = dig_a_floating_ip()
 
