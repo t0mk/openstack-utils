@@ -146,11 +146,6 @@ if __name__ == '__main__':
     _image  = find_resource_id_by_name(args.image, _glance().images.list)
     _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
 
-    print _glance().images.get(_image)
-    for i in _glance().images.list():
-        print i
-
-
     if args.test:
         print "args are"
         print args
