@@ -2,6 +2,9 @@ import os
 import logging
 import subprocess
 import novaclient.v1_1
+import glanceclient
+import keystoneclient.v2_0
+
 
 KEYPAIR = 'tkarasek_key'
 
@@ -23,13 +26,37 @@ class NovaWrapperError(Exception):
     pass
 
 
+class KeystoneProxy(object):
+    _client = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._client:
+            cls._client = keystoneclient.v2_0.client.Client(
+            username=_USERNAME, password=_PASSWORD,
+            tenant_name=_TENANT, auth_url=_AUTH_URL
+        )
+        return cls._client
+
+
 class NovaProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
         if not cls._client:
+            # nova client cant be create from Keystone catalog URL ...
             cls._client = novaclient.v1_1.client.Client(
                 username=_USERNAME, api_key=_PASSWORD,
                 auth_url=_AUTH_URL, project_id=_TENANT)
+        return cls._client
+
+
+class GlanceProxy(object):
+    _client = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._client:
+            # Glance client can be created from Keystone catalog URL
+            endpoints  = KeystoneProxy().service_catalog.get_endpoints()
+            url = endpoints["image"][0]["publicURL"]
+            cls._client = glanceclient.Client('1', url,
+                token=KeystoneProxy().auth_token)
         return cls._client
 
 
