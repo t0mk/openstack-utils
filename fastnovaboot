@@ -108,6 +108,7 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='smarter nova boot')
 
     help_userdata = "File with userdata for cloudinit"
@@ -117,13 +118,12 @@ if __name__ == '__main__':
                  "Enclose the whole argument to single quotes and string "
                  "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
                  "NOT OK: \"{'a': '5'}\" ")
-    help_name = ("name for the new server. Default is %s-<4 random hex chars>"
-                 % BASE_NAME)
-    help_image = ("name or id of image to boot. Default is %s" % BASE_IMAGE)
-    help_flavor = ("name of flavor ($ nova flavor-list'), default is %s "
-                 % BASE_FLAVOR)
+    help_name = ("name for the new server. Default is "
+                 "%s-<4 random hex chars>." % BASE_NAME)
+    help_image = ("name or id of image to boot.")
+    help_flavor = ("name of flavor ($ nova flavor-list')")
     help_secgroups = ("Space-separated list of security groups which in which "
-                      "the instance should be. Default is %s." % BASE_SECGROUPS)
+                      "the instance should be.")
     help_groups = ("Space-separated list of host groups that you want the "
                    "host to belong. This is completely up to the user, and it "
                    "not checked for validity. ")
