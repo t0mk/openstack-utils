@@ -36,6 +36,7 @@ i = util.logger.info
 d = util.logger.debug
 
 _nova = util.NovaProxy
+_glance = util.GlanceProxy
 
 def get_free_floating_ips():
     return [ ip for ip in _nova().floating_ips.list()
@@ -89,8 +90,11 @@ def find_resource_id_by_name(name, resource_list):
     except ValueError:
         matching = [r.id for r in resource_list() if name in r.name]
         if len(matching) == 0:
-            raise util.NovaWrapperError(
-                "Could not find any resource matcihing name '%s'" % name)
+            msg = ("Could not find any resource matching name '%s'. "
+                   "If this is an image, check that it's public or shared "
+                   "with the current tenant (it's listed in $ glance index)"
+                   % name)
+            raise util.NovaWrapperError(msg)
         if len(matching) > 1:
             raise util.NovaWrapperError(
                 "Found too many resources matching name '%s': %s" %
@@ -139,8 +143,13 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
     args = parser.parse_args()
 
-    _image  = find_resource_id_by_name(args.image, _nova().images.list)
+    _image  = find_resource_id_by_name(args.image, _glance().images.list)
     _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
+
+    print _glance().images.get(_image)
+    for i in _glance().images.list():
+        print i
+
 
     if args.test:
         print "args are"
@@ -169,6 +178,7 @@ if __name__ == '__main__':
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
     if args.test:
+        util.GlanceProxy()
         i("This is a test run, _NOT_ booting the instance.")
     else:
         new_server = _nova().servers.create(**params)
