@@ -8,7 +8,7 @@
 # $ novassh f978
 # will open ssh connection to the instance. It will match first
 # instance matching the name (first in nova list, so probably the
-# latest one),
+# latest created one),
 #
 # In order for the script to work, the key must be ok, network must
 # be working. The script will attempt to ssh as root. If it detects
@@ -53,10 +53,13 @@ if __name__ == "__main__":
     help_nosshcheck = ('Dont check if machine has port 22 open in some '
                        'security group.')
 
+    help_test = ('Just check if the ssh connection can be open, and quit.')
+
     parser.add_argument('instance_name', help='name of instance to ssh to')
     parser.add_argument('-u','--user', help='user for ssh')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
                         action='store_true')
+    parser.add_argument('-t', '--test', help=help_test, action='store_true')
 
     args = parser.parse_args()
 
@@ -89,9 +92,19 @@ if __name__ == "__main__":
         if not check_port_open(vm, 22):
             raise util.NovaWrapperError("Port 22 is not open in any security "
                                         "group in the machine.")
+    if args.test:
+        try:
+            ssh_cmd = ("ssh -q -o ConnectTimeout=3 -i %s %s@%s exit" %
+                      (PRIVKEY_FILE, ssh_user, fip.ip))
+            i("Sucessfully connected to %s" % fip.ip)
+        except:
+            i("Failed when attempting to open ssh connection as %s" %
+              ssh_cmd)
+            sys.exit(1)
 
-    ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
-    util.callCheck(ssh_cmd)
+    else:
+        ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
+        util.callCheck(ssh_cmd)
 
 
 
