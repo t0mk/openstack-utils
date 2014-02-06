@@ -17,6 +17,7 @@
 import argparse
 
 import util
+import sys
 
 PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
 
@@ -45,6 +46,31 @@ def check_port_open(vm, port):
                 return True
     return False
 
+def get_matching_vms(name):
+    return [ m for m in _nova().servers.list() if name in m.name ]
+
+def get_ssh_user(vm):
+    ssh_user = 'root'
+
+    image_name = _nova().images.get(vm.image['id']).name
+
+    if 'ubuntu' in image_name.lower():
+        ssh_user = 'ubuntu'
+    return ssh_user
+
+def test_ssh_connection(ssh_user, ip):
+    try:
+        ssh_cmd = ("ssh -q -o ConnectTimeout=3 -i %s %s@%s exit" %
+                  (PRIVKEY_FILE, ssh_user, ip))
+        util.callCheck(ssh_cmd)
+        i("Sucessfully connected to %s" % ip)
+        return 0
+    except:
+        i("Failed when attempting to open ssh connection as %s" %
+          ssh_cmd)
+        return -1
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -65,8 +91,7 @@ if __name__ == "__main__":
 
     _nova = util.NovaProxy
 
-    matching_vms = [ m for m in _nova().servers.list()
-                     if args.instance_name in m.name ]
+    matching_vms = get_matching_vms(args.instance_name)
 
     if not matching_vms:
         raise util.NovaWrapperError("no vm matches name %s"
@@ -77,12 +102,7 @@ if __name__ == "__main__":
     i("Will attempt to ssh to instance %s" % vm)
 
     if not args.user:
-        ssh_user = 'root'
-
-        image_name = _nova().images.get(vm.image['id']).name
-
-        if 'ubuntu' in image_name.lower():
-            ssh_user = 'ubuntu'
+        ssh_user = get_ssh_user(vm)
     else:
         ssh_user = args.user
 
@@ -93,18 +113,8 @@ if __name__ == "__main__":
             raise util.NovaWrapperError("Port 22 is not open in any security "
                                         "group in the machine.")
     if args.test:
-        try:
-            ssh_cmd = ("ssh -q -o ConnectTimeout=3 -i %s %s@%s exit" %
-                      (PRIVKEY_FILE, ssh_user, fip.ip))
-            i("Sucessfully connected to %s" % fip.ip)
-        except:
-            i("Failed when attempting to open ssh connection as %s" %
-              ssh_cmd)
-            sys.exit(1)
-
+        sys.exit(test_ssh_connection(ssh_user, fip.ip))
     else:
         ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
         util.callCheck(ssh_cmd)
-
-
 
