@@ -22,6 +22,7 @@ import time
 import pprint
 import argparse
 import json
+import sys
 
 import util
 
@@ -101,47 +102,8 @@ def find_resource_id_by_name(name, resource_list):
                 (name, matching))
         return matching[0]
 
-
-if __name__ == '__main__':
-
-    _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
-
-
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='smarter nova boot')
-
-    help_userdata = "File with userdata for cloudinit"
-    help_test = "Avoid all calls changing states in OpenStack"
-    help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
-                 "and values must be only strings - no numbers or lists."
-                 "Enclose the whole argument to single quotes and string "
-                 "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
-                 "NOT OK: \"{'a': '5'}\" ")
-    help_name = ("name for the new server. Default is "
-                 "%s-<4 random hex chars>." % BASE_NAME)
-    help_image = ("name or id of image to boot.")
-    help_flavor = ("name of flavor ($ nova flavor-list')")
-    help_secgroups = ("Space-separated list of security groups which in which "
-                      "the instance should be.")
-    help_groups = ("Space-separated list of host groups that you want the "
-                   "host to belong. This is completely up to the user, and it "
-                   "not checked for validity. ")
-
-    parser.add_argument('-n', '--name', help=help_name, default=_name)
-    parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
-    parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
-
-    parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
-                        help=help_userdata)
-
-    parser.add_argument('-t', '--test', default=False, action="store_true",
-                        help=help_test)
-    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
-                        default=BASE_SECGROUPS)
-    parser.add_argument('-m', '--meta', help=help_meta)
-    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
-    args = parser.parse_args()
+def main(args_dict):
+    args = util.AttrDict(args_dict)
 
     _image  = find_resource_id_by_name(args.image, _glance().images.list)
     _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
@@ -200,3 +162,51 @@ if __name__ == '__main__':
         new_server.add_floating_ip(free_ip)
 
         util.callCheck("nova show " + new_server.id)
+        return 0
+
+
+
+if __name__ == '__main__':
+
+    _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
+
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description='smarter nova boot')
+
+    help_userdata = "File with userdata for cloudinit"
+    help_test = "Avoid all calls changing states in OpenStack"
+    help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
+                 "and values must be only strings - no numbers or lists."
+                 "Enclose the whole argument to single quotes and string "
+                 "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
+                 "NOT OK: \"{'a': '5'}\" ")
+    help_name = ("name for the new server. Default is "
+                 "%s-<4 random hex chars>." % BASE_NAME)
+    help_image = ("name or id of image to boot.")
+    help_flavor = ("name of flavor ($ nova flavor-list')")
+    help_secgroups = ("Space-separated list of security groups which in which "
+                      "the instance should be.")
+    help_groups = ("Space-separated list of host groups that you want the "
+                   "host to belong. This is completely up to the user, and it "
+                   "not checked for validity. ")
+
+    parser.add_argument('-n', '--name', help=help_name, default=_name)
+    parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
+    parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
+
+    parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
+                        help=help_userdata)
+
+    parser.add_argument('-t', '--test', default=False, action="store_true",
+                        help=help_test)
+    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
+                        default=BASE_SECGROUPS)
+    parser.add_argument('-m', '--meta', help=help_meta)
+    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
+
+    args = parser.parse_args()
+
+    sys.exit(main(args.__dict__))
+

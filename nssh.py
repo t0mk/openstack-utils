@@ -94,11 +94,12 @@ def main(args_dict):
             raise util.NovaWrapperError("Port 22 is not open in any security "
                                         "group in the machine.")
     if args.test:
-        sys.exit(test_ssh_connection(ssh_user, fip.ip))
+        return test_ssh_connection(ssh_user, fip.ip)
     else:
         ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
         util.callCheck(ssh_cmd)
 
+    return 0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
