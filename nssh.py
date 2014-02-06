@@ -26,7 +26,7 @@ i = util.logger.info
 
 
 def get_floating_ip_of_instance(instance_id):
-    ips = [ip for ip in _nova().floating_ips.list()
+    ips = [ip for ip in util.NovaProxy().floating_ips.list()
            if ip.instance_id == instance_id]
     if not ips:
         raise util.NovaWrapperError("Instance %s does not have a floating IP"
@@ -37,7 +37,7 @@ def get_floating_ip_of_instance(instance_id):
 def check_port_open(vm, port):
     secgroup_names = [sg['name'] for sg in vm.security_groups]
 
-    secgroups = [sg for sg in _nova().security_groups.list()
+    secgroups = [sg for sg in util.NovaProxy().security_groups.list()
                  if sg.name in secgroup_names]
     relevant_rules = sum([sg.rules for sg in secgroups], [])
     for rule in relevant_rules:
@@ -47,12 +47,12 @@ def check_port_open(vm, port):
     return False
 
 def get_matching_vms(name):
-    return [ m for m in _nova().servers.list() if name in m.name ]
+    return [ m for m in util.NovaProxy().servers.list() if name in m.name ]
 
 def get_ssh_user(vm):
     ssh_user = 'root'
 
-    image_name = _nova().images.get(vm.image['id']).name
+    image_name = util.NovaProxy().images.get(vm.image['id']).name
 
     if 'ubuntu' in image_name.lower():
         ssh_user = 'ubuntu'
@@ -70,27 +70,8 @@ def test_ssh_connection(ssh_user, ip):
           ssh_cmd)
         return -1
 
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='smart ssh to a nova instance')
-
-    help_nosshcheck = ('Dont check if machine has port 22 open in some '
-                       'security group.')
-
-    help_test = ('Just check if the ssh connection can be open, and quit.')
-
-    parser.add_argument('instance_name', help='name of instance to ssh to')
-    parser.add_argument('-u','--user', help='user for ssh')
-    parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
-                        action='store_true')
-    parser.add_argument('-t', '--test', help=help_test, action='store_true')
-
-    args = parser.parse_args()
-
-    _nova = util.NovaProxy
-
+def main(args_dict):
+    args = util.AttrDict(args_dict)
     matching_vms = get_matching_vms(args.instance_name)
 
     if not matching_vms:
@@ -117,4 +98,25 @@ if __name__ == "__main__":
     else:
         ssh_cmd = "ssh -i %s %s@%s" % (PRIVKEY_FILE, ssh_user, fip.ip)
         util.callCheck(ssh_cmd)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='smart ssh to a nova instance')
+
+    help_nosshcheck = ('Dont check if machine has port 22 open in some '
+                       'security group.')
+
+    help_test = ('Just check if the ssh connection can be open, and quit.')
+
+    parser.add_argument('instance_name', help='name of instance to ssh to')
+    parser.add_argument('-u','--user', help='user for ssh')
+    parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
+                        action='store_true')
+    parser.add_argument('-t', '--test', help=help_test, action='store_true')
+
+    args = parser.parse_args()
+
+    sys.exit(main(args.__dict__))
+
 
