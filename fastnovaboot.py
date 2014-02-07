@@ -2,16 +2,13 @@
 
 """
 Wrapper of nova API boot call that assigns a floating ip to an instance.
-It spares you from assigning a floating IPto the new instance after
+It spares you from assigning a floating IP to the new instance after
 "nova boot".
 
-See the source first, mainly variables
-BASE_NAME
-BASE_IMAGE
-KEYPAIR_NAME
+See the util.py first, and set the BASE_* variables to what you like
 
 The script takes credentials, tenant name and Keystone URL from the usual
-environment variables.
+environment variables (OS_{AUTH_URL,TENANT_ID,TENANT_NAME,USERNAME,PASSWORD})
 
 See
 $ fastnovaboot --help
@@ -25,13 +22,6 @@ import json
 import sys
 
 import util
-
-BASE_NAME = 'tomktest'
-#BASE_IMAGE = '670765a0-0017-431e-a3b4-ad3e451ce477'
-BASE_IMAGE = 'Ubuntu 13.04 [upped by tomk]'
-KEYPAIR_NAME = 'tkarasek_key'
-BASE_FLAVOR = 'm1.tiny'
-BASE_SECGROUPS = ['default']
 
 i = util.logger.info
 d = util.logger.debug
@@ -102,8 +92,51 @@ def find_resource_id_by_name(name, resource_list):
                 (name, matching))
         return matching[0]
 
-def main(args_dict):
-    args = util.AttrDict(args_dict)
+def get_args(args_list):
+    _name = util.BASE_NAME + '-' + uuid.uuid4().hex[:4]
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description='smarter nova boot')
+
+    help_userdata = "File with userdata for cloudinit"
+    help_test = "Avoid all calls changing states in OpenStack"
+    help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
+                 "and values must be only strings - no numbers or lists."
+                 "Enclose the whole argument to single quotes and string "
+                 "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
+                 "NOT OK: \"{'a': '5'}\" ")
+    help_name = ("name for the new server. Default is "
+                 "%s-<4 random hex chars>." % util.BASE_NAME)
+    help_image = ("name or id of image to boot.")
+    help_flavor = ("name of flavor ($ nova flavor-list')")
+    help_secgroups = ("Space-separated list of security groups which in which "
+                      "the instance should be.")
+    help_groups = ("Space-separated list of host groups that you want the "
+                   "host to belong. This is completely up to the user, and it "
+                   "not checked for validity. ")
+
+    parser.add_argument('-n', '--name', help=help_name, default=_name)
+    parser.add_argument('-i', '--image', help=help_image,
+                        default=util.BASE_IMAGE)
+    parser.add_argument('-f', '--flavor', help=help_flavor,
+                        default=util.BASE_FLAVOR)
+
+    parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
+                        help=help_userdata)
+
+    parser.add_argument('-t', '--test', default=False, action="store_true",
+                        help=help_test)
+    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
+                        default=util.BASE_SECGROUPS)
+    parser.add_argument('-m', '--meta', help=help_meta)
+    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
+
+    return parser.parse_args(sys.argv[1:])
+
+
+def main(args_list):
+    args = get_args(args_list)
 
     _image  = find_resource_id_by_name(args.image, _glance().images.list)
     _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
@@ -165,48 +198,6 @@ def main(args_dict):
         return 0
 
 
-
 if __name__ == '__main__':
-
-    _name = BASE_NAME + '-' +uuid.uuid4().hex[:4]
-
-
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='smarter nova boot')
-
-    help_userdata = "File with userdata for cloudinit"
-    help_test = "Avoid all calls changing states in OpenStack"
-    help_meta = ("JSON dict with additional meta-data. Up to 5 items. Keys "
-                 "and values must be only strings - no numbers or lists."
-                 "Enclose the whole argument to single quotes and string "
-                 "literals in it to double quotes. I.e. OK: '{\"a\": \"5\"}', "
-                 "NOT OK: \"{'a': '5'}\" ")
-    help_name = ("name for the new server. Default is "
-                 "%s-<4 random hex chars>." % BASE_NAME)
-    help_image = ("name or id of image to boot.")
-    help_flavor = ("name of flavor ($ nova flavor-list')")
-    help_secgroups = ("Space-separated list of security groups which in which "
-                      "the instance should be.")
-    help_groups = ("Space-separated list of host groups that you want the "
-                   "host to belong. This is completely up to the user, and it "
-                   "not checked for validity. ")
-
-    parser.add_argument('-n', '--name', help=help_name, default=_name)
-    parser.add_argument('-i', '--image', help=help_image, default=BASE_IMAGE)
-    parser.add_argument('-f', '--flavor', help=help_flavor, default=BASE_FLAVOR)
-
-    parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
-                        help=help_userdata)
-
-    parser.add_argument('-t', '--test', default=False, action="store_true",
-                        help=help_test)
-    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
-                        default=BASE_SECGROUPS)
-    parser.add_argument('-m', '--meta', help=help_meta)
-    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
-
-    args = parser.parse_args()
-
-    sys.exit(main(args.__dict__))
+    sys.exit(main(sys.argv[1:]))
 
