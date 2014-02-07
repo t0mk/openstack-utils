@@ -8,6 +8,6 @@ Use as:
 ```
 cd ~/bin
 git clone https://github.com/t0mk/openstack-utils
-echo 'PATH=${PATH}:$(pwd)/openstack-utils' >> ~/.zshrc
-# echo 'PATH=${PATH}:$(pwd)/openstack-utils' >> ~/.bashrc
+echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.zshrc
+# echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.bashrc
 ```
