@@ -5,8 +5,15 @@ import novaclient.v1_1
 import glanceclient
 import keystoneclient.v2_0
 
+# set the following variables to what you like
 
 KEYPAIR = 'tkarasek_key'
+BASE_NAME = 'tomktest'
+BASE_NAME_SPAWNTEST = 'spawntest'
+BASE_IMAGE = 'db93d1ac-308e-43c5-acaa-666553b606a7'
+BASE_FLAVOR = 'm1.tiny'
+BASE_SECGROUPS = ['default']
+PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
 
 _USERNAME = os.environ['OS_USERNAME']
 _PASSWORD = os.environ['OS_PASSWORD']

@@ -23,11 +23,14 @@ import sys
 
 import util
 
+
 i = util.logger.info
 d = util.logger.debug
 
+
 _nova = util.NovaProxy
 _glance = util.GlanceProxy
+
 
 def get_free_floating_ips():
     return [ ip for ip in _nova().floating_ips.list()
@@ -91,6 +94,7 @@ def find_resource_id_by_name(name, resource_list):
                 "Found too many resources matching name '%s': %s" %
                 (name, matching))
         return matching[0]
+
 
 def get_args(args_list):
     _name = util.BASE_NAME + '-' + uuid.uuid4().hex[:4]
