@@ -101,6 +101,7 @@ def get_args(args_list):
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        prog='fastnovaboot',
         description='smarter nova boot')
 
     help_userdata = "File with userdata for cloudinit"
@@ -136,7 +137,7 @@ def get_args(args_list):
     parser.add_argument('-m', '--meta', help=help_meta)
     parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
 
-    return parser.parse_args(sys.argv[1:])
+    return parser.parse_args(args_list)
 
 
 def main(args_list):
@@ -199,9 +200,9 @@ def main(args_list):
         new_server.add_floating_ip(free_ip)
 
         util.callCheck("nova show " + new_server.id)
-        return 0
+        return (server_id, floating_ip)
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])
 

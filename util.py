@@ -1,6 +1,8 @@
 import os
 import logging
 import subprocess
+import uuid
+
 import novaclient.v1_1
 import glanceclient
 import keystoneclient.v2_0
@@ -76,4 +78,3 @@ def callCheck(command, env=None, stdin=None):
     logger.info("about to run \"%s\"" % command)
     if subprocess.call(command.split(), env=env, stdin=stdin):
         raise Exception("%s failed." % command)
-
