@@ -9,14 +9,28 @@ import keystoneclient.v2_0
 
 # set the following variables to what you like
 
+# name of openstack keypair
 KEYPAIR = 'tkarasek_key'
+
+# prefix for random names of Virtual machines run with fastnovaboot
 BASE_NAME = 'tomktest'
+
+# prefix for random names of Virtual Machines run with ansiblespawn
 BASE_NAME_SPAWNTEST = 'spawntest'
+
+# UUID of default image
 BASE_IMAGE = 'db93d1ac-308e-43c5-acaa-666553b606a7'
+
+# default flavor
 BASE_FLAVOR = 'm1.tiny'
+
+# default list of security groups for instances
 BASE_SECGROUPS = ['default']
+
+# path to file with private key for your openstack keypair
 PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
 
+# openstack variables
 _USERNAME = os.environ['OS_USERNAME']
 _PASSWORD = os.environ['OS_PASSWORD']
 _TENANT = os.environ['OS_TENANT_NAME']

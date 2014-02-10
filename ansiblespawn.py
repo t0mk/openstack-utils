@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import nssh
-import fastnovaboot
-import argparse
 import sys
 import time
 import uuid
+import os.path
 
 import util
+import nssh
+import fastnovaboot
+import argparse
 
 i = util.logger.info
 interval = 3
@@ -19,15 +20,23 @@ desc = ('Spawn a VM and run an Ansible playbook on it. The playbook comes '
 def main(args_list):
     args, unparsed_args_list = get_args(args_list)
 
+    if not os.path.isfile(args.playbook):
+        raise util.NovaWrapperError("Given playbook doesn't exist")
+
+    util.callCheck("ansible-playbook --syntax-check %s" % args.playbook)
+
+    if not unparsed_args_list:
+        unparsed_args_list = []
+
     name = 'spawntest-' + uuid.uuid4().hex[:4]
     unparsed_args_list += ['-n',name]
 
-    i("About to run fastnovaboot with args: %s" % unparsed_args_list)
 
     if args.test:
         # this will cause nova boot to do only a test run
         unparsed_args_list += ['-t']
 
+    i("About to run fastnovaboot with args: %s" % unparsed_args_list)
     _, ip = fastnovaboot.main(unparsed_args_list)
 
     if not args.test:
@@ -64,5 +73,5 @@ def get_args(args_list):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    main(sys.argv[1:])
 

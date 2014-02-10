@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 """
-Wrapper of nova API boot call that assigns a floating ip to an instance.
-It spares you from assigning a floating IP to the new instance after
-"nova boot".
+Wrapper of nova API boot call that boots an instance and assigns a floating ip
+to it.
+
+It also checks the status of the machine shortly after creation.
 
 See the util.py first, and set the BASE_* variables to what you like
 
@@ -175,6 +176,7 @@ def main(args_list):
     if args.test:
         util.GlanceProxy()
         i("This is a test run, _NOT_ booting the instance.")
+        return (None, None)
     else:
         new_server = _nova().servers.create(**params)
         i("Created new server with id " + new_server.id)
