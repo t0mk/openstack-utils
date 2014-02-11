@@ -19,9 +19,6 @@ import argparse
 import util
 import sys
 
-util.PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
-
-
 i = util.logger.info
 
 
