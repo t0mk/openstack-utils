@@ -55,6 +55,8 @@ def get_ssh_user(vm):
 
     if 'ubuntu' in image_name.lower():
         ssh_user = 'ubuntu'
+    if 'centos' in  image_name.lower():
+        ssh_user = 'cloud-user'
     return ssh_user
 
 
