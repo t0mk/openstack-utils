@@ -114,10 +114,13 @@ def get_args(args_list):
                  "NOT OK: \"{'a': '5'}\" ")
     help_name = ("name for the new server. Default is "
                  "%s-<4 random hex chars>." % util.BASE_NAME)
-    help_image = ("name or id of image to boot.")
-    help_flavor = ("name of flavor ($ nova flavor-list')")
+    help_image = ("name or id of image to boot. If you pass non-uuid string, "
+                  "it will be substring-matched to names of existing images." )
+    help_flavor = ("name of flavor ($ nova flavor-list'). If you pass "
+                   "non-uuid string, it will be substring matched to names "
+                   "of existing flavors".)
     help_secgroups = ("Space-separated list of security groups which in which "
-                      "the instance should be.")
+                      "the instance should be. There are exact names.")
     help_groups = ("Space-separated list of host groups that you want the "
                    "host to belong. This is completely up to the user, and it "
                    "not checked for validity. ")
