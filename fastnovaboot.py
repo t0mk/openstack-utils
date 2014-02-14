@@ -118,7 +118,7 @@ def get_args(args_list):
                   "it will be substring-matched to names of existing images." )
     help_flavor = ("name of flavor ($ nova flavor-list'). If you pass "
                    "non-uuid string, it will be substring matched to names "
-                   "of existing flavors".)
+                   "of existing flavors.")
     help_secgroups = ("Space-separated list of security groups which in which "
                       "the instance should be. There are exact names.")
     help_groups = ("Space-separated list of host groups that you want the "
