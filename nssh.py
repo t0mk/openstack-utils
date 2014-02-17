@@ -17,6 +17,7 @@
 import argparse
 
 import util
+import uuid
 import sys
 
 i = util.logger.info
@@ -45,7 +46,12 @@ def check_port_open(vm, port):
 
 
 def get_matching_vms(name):
-    return [ m for m in util.NovaProxy().servers.list() if name in m.name ]
+    try:
+        uuid.UUID(name)
+        # name is UUID
+        return [ m for m in util.NovaProxy().servers.list() if name in m.id ]
+    except ValueError:
+        return [ m for m in util.NovaProxy().servers.list() if name in m.name ]
 
 
 def get_ssh_user(vm):
