@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Script which opens ssh connection to a openstack instance with
+# Script which opens sh connection to a openstack instance with
 # name containing $1.
 # It will try to find the instance and then a corresponding floating IP.
 #
@@ -151,7 +151,7 @@ def main(args_list):
     if args.test:
         return test_ssh_connection(ssh_user, fip.ip)
     else:
-        ssh_cmd = "ssh -i %s %s@%s" % (util.PRIVKEY_FILE, ssh_user, fip.ip)
+        ssh_cmd = "ssh -X -i %s %s@%s" % (util.PRIVKEY_FILE, ssh_user, fip.ip)
         util.callCheck(ssh_cmd)
 
     return 0
