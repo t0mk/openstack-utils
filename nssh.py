@@ -79,6 +79,21 @@ def test_ssh_connection(ssh_user, ip):
         return -1
 
 
+def ask():
+    l = util.NovaProxy().servers.list()
+    i = 1
+    print "Current tenant is \"%s\". There are following VMs:" % util._TENANT
+    for s in l:
+        addresses = [a['addr'] for a in s.addresses.values()[0]]
+        print "%d: %s, %s" % (i, s, addresses)
+        i += 1
+
+    ch = raw_input("Select VM to SSH to (give one number): ")
+
+    num = int(ch)
+    return l[num-1]
+
+
 def get_args(args_list):
     parser = argparse.ArgumentParser(
         description='smart ssh to a nova instance')
@@ -87,8 +102,17 @@ def get_args(args_list):
                        'security group.')
 
     help_test = ('Just check if the ssh connection can be open, and quit.')
+    help_ask = ('List all existing vms in current tenant and ask to which '
+                'to connect.')
 
-    parser.add_argument('instance_name', help='name of instance to ssh to')
+    find = parser.add_mutually_exclusive_group()
+    ask = parser.add_mutually_exclusive_group()
+
+    find.add_argument('instance_name', nargs='?',
+                        help='name of instance to ssh to')
+
+    ask.add_argument('-a', '--ask', help=help_ask, action='store_true')
+
     parser.add_argument('-u','--user', help='user for ssh')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
                         action='store_true')
@@ -99,13 +123,17 @@ def get_args(args_list):
 
 def main(args_list):
     args = get_args(args_list)
-    matching_vms = get_matching_vms(args.instance_name)
+    vm = None
 
-    if not matching_vms:
-        raise util.NovaWrapperError("no vm matches name %s"
-                                    % args.instance_name)
+    if args.ask:
+        vm = ask()
+    else:
+        matching_vms = get_matching_vms(args.instance_name)
+        if not matching_vms:
+            raise util.NovaWrapperError("no vm matches name %s"
+                                        % args.instance_name)
+        vm = matching_vms[0]
 
-    vm = matching_vms[0]
 
     i("Will attempt to ssh to instance %s" % vm)
 
