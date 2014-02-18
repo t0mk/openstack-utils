@@ -102,16 +102,9 @@ def get_args(args_list):
                        'security group.')
 
     help_test = ('Just check if the ssh connection can be open, and quit.')
-    help_ask = ('List all existing vms in current tenant and ask to which '
-                'to connect.')
 
-    find = parser.add_mutually_exclusive_group()
-    ask = parser.add_mutually_exclusive_group()
-
-    find.add_argument('instance_name', nargs='?',
+    parser.add_argument('instance_name', nargs='?',
                         help='name of instance to ssh to')
-
-    ask.add_argument('-a', '--ask', help=help_ask, action='store_true')
 
     parser.add_argument('-u','--user', help='user for ssh')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
@@ -125,7 +118,7 @@ def main(args_list):
     args = get_args(args_list)
     vm = None
 
-    if args.ask:
+    if not args.instance_name:
         vm = ask()
     else:
         matching_vms = get_matching_vms(args.instance_name)
