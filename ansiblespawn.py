@@ -28,11 +28,9 @@ def main(args_list):
     if not unparsed_args_list:
         unparsed_args_list = []
 
-    name = 'spawntest-' + uuid.uuid4().hex[:4]
-    if args.name:
-        name = args.name
+    name = args.playbook + '-' + uuid.uuid4().hex[:4]
 
-    unparsed_args_list += ['-n',name]
+    unparsed_args_list += ['-i', args.image, '-n', name]
 
 
     if args.test:
@@ -67,11 +65,11 @@ def get_args(args_list):
 
     help_playbook = 'ansible playbook with - hosts: "{{ h }}"'
     help_test = 'test - dont spawn and dont run ansible'
-    help_name = 'name for the spawned instance, not mandatory'
+    help_image = 'image from which to make the instance'
 
     parser.add_argument('-p', '--playbook', help=help_playbook, required=True)
     parser.add_argument('-t', '--test', help=help_test, action='store_true')
-    parser.add_argument('-n', '--name', help=help_name, required=False)
+    parser.add_argument('-i', '--image', help=help_image, required=True)
 
     # returns tupe (args with populated namespace, remaining unparsed opts)
     return parser.parse_known_args(args_list)
