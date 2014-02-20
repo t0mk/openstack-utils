@@ -34,6 +34,8 @@ $ nssh test81
 $ ndeletevm test81
 ```
 
+You can also do `$ nssh` without parameters. It will list instances in current tenant and offer you to choose to which to SSH.
+
 ### Workflow with ansible
 
 Using _ansiblespawn_:
@@ -47,7 +49,7 @@ with an example playbook showissue.yml:
 then
 
 ```
-$ ansiblespawn -p showissue.yml
+$ ansiblespawn -i db93d1ac-308e-43c5-acaa-666553b606a7 -p showissue.yml
 [...]
 INFO:os_utils: About to run fastnovaboot with args: ['-n', 'spawntest-4540']
 INFO:os_utils: Launching new server with parameters:
