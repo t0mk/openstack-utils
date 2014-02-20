@@ -205,7 +205,7 @@ def main(args_list):
         new_server.add_floating_ip(free_ip)
 
         util.callCheck("nova show " + new_server.id)
-        return (server_id, free_ip.ip)
+        return (new_server.image['id'], free_ip.ip)
 
 
 if __name__ == '__main__':

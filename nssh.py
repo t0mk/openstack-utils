@@ -54,15 +54,17 @@ def get_matching_vms(name):
         return [ m for m in util.NovaProxy().servers.list() if name in m.name ]
 
 
-def get_ssh_user(vm):
+def get_ssh_user(image_id):
     ssh_user = 'root'
 
-    image_name = util.NovaProxy().images.get(vm.image['id']).name
+    image_name = util.NovaProxy().images.get(image_id).name
 
     if 'ubuntu' in image_name.lower():
         ssh_user = 'ubuntu'
     if 'centos' in  image_name.lower():
         ssh_user = 'cloud-user'
+    if 'debian' in  image_name.lower():
+        ssh_user = 'debian'
     return ssh_user
 
 
@@ -131,7 +133,7 @@ def main(args_list):
     i("Will attempt to ssh to instance %s" % vm)
 
     if not args.user:
-        ssh_user = get_ssh_user(vm)
+        ssh_user = get_ssh_user(vm.image['id'])
     else:
         ssh_user = args.user
 

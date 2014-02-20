@@ -32,13 +32,12 @@ def main(args_list):
 
     unparsed_args_list += ['-i', args.image, '-n', name]
 
-
     if args.test:
         # this will cause nova boot to do only a test run
         unparsed_args_list += ['-t']
 
     i("About to run fastnovaboot with args: %s" % unparsed_args_list)
-    _, ip = fastnovaboot.main(unparsed_args_list)
+    image_id, ip = fastnovaboot.main(unparsed_args_list)
 
     if not args.test:
         while nssh.main(['-t', name]) != 0:
@@ -49,6 +48,8 @@ def main(args_list):
         i('A test run, _NOT_ spawning the VM')
 
     ansible_cmd = "ansible-playbook %s -e h=%s" % (args.playbook, ip)
+    if nssh.get_ssh_user(image_id) != 'root':
+        ansible_cmd += " -s"
     i("VM ready. About to execute %s" % ansible_cmd)
 
     if not args.test:
