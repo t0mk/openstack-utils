@@ -17,6 +17,23 @@ desc = ('Spawn a VM and run an Ansible playbook on it. The playbook comes '
         'in -p argument. the rest of the arguments are passed to '
         'fastnovaboot.')
 
+def ask():
+    l = util.NovaProxy().images.list()
+    l.sort(key=lambda x: x.name.lower())
+    n = 1
+    print ("Current tenant is \"%s\". There are following available images:"
+           % util._TENANT)
+    for img in l:
+        print "%d: %s, %s" % (n, img.name, img.id)
+        n += 1
+
+    ch = raw_input("Select image to spawn (give a number): ")
+
+    num = int(ch)
+    return l[num-1].id
+
+
+
 def main(args_list):
     args, unparsed_args_list = get_args(args_list)
 
@@ -29,8 +46,14 @@ def main(args_list):
         unparsed_args_list = []
 
     name = args.playbook + '-' + uuid.uuid4().hex[:4]
+    unparsed_args_list += ['-n', name]
 
-    unparsed_args_list += ['-i', args.image, '-n', name]
+    if args.image:
+        image = args.image
+    else:
+        image = ask()
+
+    unparsed_args_list += ['-i', image]
 
     if args.test:
         # this will cause nova boot to do only a test run
@@ -47,12 +70,11 @@ def main(args_list):
     else:
         i('A test run, _NOT_ spawning the VM')
 
-    ansible_cmd = "ansible-playbook %s -e h=%s" % (args.playbook, ip)
-    if nssh.get_ssh_user(image_id) != 'root':
-        ansible_cmd += " -s"
-    i("VM ready. About to execute %s" % ansible_cmd)
-
     if not args.test:
+        ansible_cmd = "ansible-playbook %s -e h=%s" % (args.playbook, ip)
+        if nssh.get_ssh_user(image_id) != 'root':
+            ansible_cmd += " -s"
+        i("VM ready. About to execute %s" % ansible_cmd)
         util.callCheck(ansible_cmd)
     else:
         i('A test run, _NOT_ running ansible-playbook')
@@ -70,7 +92,7 @@ def get_args(args_list):
 
     parser.add_argument('-p', '--playbook', help=help_playbook, required=True)
     parser.add_argument('-t', '--test', help=help_test, action='store_true')
-    parser.add_argument('-i', '--image', help=help_image, required=True)
+    parser.add_argument('-i', '--image', help=help_image, required=False)
 
     # returns tupe (args with populated namespace, remaining unparsed opts)
     return parser.parse_known_args(args_list)
