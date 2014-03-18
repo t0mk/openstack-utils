@@ -46,10 +46,15 @@ with an example playbook showissue.yml:
   tasks:
     - shell: cat /etc/issue
 ```
-then
+then spawn an instance and run playbook on it as
 
 ```
 $ ansiblespawn -i db93d1ac-308e-43c5-acaa-666553b606a7 -p showissue.yml
+```
+
+if you don't specify image, you will be shown image list and you can choose interactively
+
+```
 [...]
 INFO:os_utils: About to run fastnovaboot with args: ['-n', 'spawntest-4540']
 INFO:os_utils: Launching new server with parameters:
