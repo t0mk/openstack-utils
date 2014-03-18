@@ -49,11 +49,6 @@ class NovaWrapperError(Exception):
     pass
 
 
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
-
 class KeystoneProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
