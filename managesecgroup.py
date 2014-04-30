@@ -21,7 +21,7 @@ import util
 
 i = util.logger.info
 
-CIDR_ALIASES = {'digile': '212.68.9.98/32', 'forge': '193.166.24.0/23' }
+CIDR_ALIASES = {'digile': '83.150.108.249/32', 'forge': '193.166.24.0/23' }
 
 desc = ('Create of modify security group')
 
