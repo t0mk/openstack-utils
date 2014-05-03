@@ -48,6 +48,8 @@ logger.setLevel(logging.DEBUG)
 class NovaWrapperError(Exception):
     pass
 
+class AnsibleWrapperError(Exception):
+    pass
 
 class KeystoneProxy(object):
     _client = None

@@ -38,7 +38,7 @@ def main(args_list):
     args, unparsed_args_list = get_args(args_list)
 
     if not os.path.isfile(args.playbook):
-        raise util.NovaWrapperError("Given playbook doesn't exist")
+        raise util.AnsibleWrapperError("Given playbook doesn't exist")
 
     util.callCheck("ansible-playbook --syntax-check %s" % args.playbook)
 
@@ -83,7 +83,7 @@ def main(args_list):
 def get_args(args_list):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        prog='ansiblespawn',
+        prog='ansible-spawn',
         description=desc)
 
     help_playbook = 'ansible playbook with - hosts: "{{ h }}"'
