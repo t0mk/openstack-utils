@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 import sys
-import time
-import uuid
+import yaml
 import os.path
 
 import util
 import shutil
-import nssh
-import fastnovaboot
 import argparse
 import tempfile
 import atexit
@@ -17,13 +14,6 @@ i = util.logger.info
 interval = 3
 
 desc = ('Apply a role to a host from ansible inventory')
-
-playbook_text = """
-- hosts: %s
-  roles:
-    - role: %s
-"""[1:]
-# removes leading newline
 
 def remove_tmp_dir(d):
     i("removing %s" % d)
@@ -57,9 +47,18 @@ def main(args_list):
         raise util.AnsibleWrapperError("Given role doesn't exist")
 
     # cur dir is tmp_dir
+    # desired role is in role_name
+    # desired host is in args.host
 
-    with open ('i.yml', 'w') as playbook:
-        playbook.write(playbook_text % (args.host, role_name))
+    playbook = [{
+      'hosts': args.host,
+      'roles': [
+         {'role': role_name}
+      ]
+    }]
+
+    with open ('i.yml', 'w') as playbook_file:
+        playbook_file.write(yaml.dump(playbook))
 
     util.callCheck("cat i.yml")
 
