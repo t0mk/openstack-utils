@@ -104,11 +104,14 @@ def get_args(args_list):
                        'security group.')
 
     help_test = ('Just check if the ssh connection can be open, and quit.')
+    help_printhostname = ('just print Forge hostname of the instance')
 
     parser.add_argument('instance_name', nargs='?',
                         help='name of instance to ssh to')
 
     parser.add_argument('-u','--user', help='user for ssh')
+    parser.add_argument('-p','--printhostname', help=help_printhostname,
+                        action='store_true')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
                         action='store_true')
     parser.add_argument('-t', '--test', help=help_test, action='store_true')
@@ -127,8 +130,15 @@ def main(args_list):
         if not matching_vms:
             raise util.NovaWrapperError("no vm matches name %s"
                                         % args.instance_name)
-        vm = matching_vms[0]
+        if args.printhostname:
+            for v in matching_vms:
+                fip = get_floating_ip_of_instance(v.id)
+                hostname = 'ip-' + fip.ip.replace('.', '-')
+                hostname += '.hosts.forgeservicelab.fi'
+                print "%s: %s" % (v, hostname)
+            return 0
 
+        vm = matching_vms[0]
 
     i("Will attempt to ssh to instance %s" % vm)
 
