@@ -45,8 +45,9 @@ def main(args_list):
     if not unparsed_args_list:
         unparsed_args_list = []
 
-    name = args.playbook + '-' + uuid.uuid4().hex[:4]
-    unparsed_args_list += ['-n', name]
+    if '-n' not in unparsed_args_list:
+        name = args.playbook + '-' + uuid.uuid4().hex[:4]
+        unparsed_args_list += ['-n', name]
 
     if args.image:
         image = args.image
