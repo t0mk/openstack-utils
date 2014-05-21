@@ -63,10 +63,15 @@ def main(args_list):
     i("About to run fastnovaboot with args: %s" % unparsed_args_list)
     image_id, ip = fastnovaboot.main(unparsed_args_list)
 
+    # ip - new floating ip associated to the machine
+
+    user = nssh.get_ssh_user(image_id)
+
     if not args.test:
-        while nssh.main(['-t', name]) != 0:
-            i("The %s VM is not ready yet. Sleeping for %d seconds" %
-              (name, interval))
+        i("About to spin-wait for when ssh is up on the new instance")
+        while nssh.test_ssh_connection(user, ip) != 0:
+            i("The VM on IP %s is not ready yet. Sleeping for %d seconds" %
+              (ip, interval))
             time.sleep(interval)
     else:
         i('A test run, _NOT_ spawning the VM')
