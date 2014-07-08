@@ -1,0 +1,27 @@
+# in your .zshrc/.bashrc just do
+# source <path_here>/tenant_switch
+# to switch tenant in shell, just do t[Enter]
+
+function t {
+    TEN_STRING=""
+    echo "which tenant:"
+    echo " * [p]rovisiontest"
+    echo " * [d]igile"
+    echo " * digile-[t]esting"
+    echo " * p[l]aza-testing"
+    echo " * plaza-d[e]vel"
+    read ten
+    case $ten in
+      ('p'|'P') TEN_STRING="provisiontest" ;;
+      ('d'|'D') TEN_STRING="digile";;
+      ('t'|'T') TEN_STRING="digile-testing";;
+      ('l'|'L') TEN_STRING="plaza-testing";;
+      ('e'|'E') TEN_STRING="plaza-devel";;
+      (*) echo "Invalid choice" ;;
+    esac
+    if [ -n "$TEN_STRING" ]; then
+        export OS_TENANT_NAME=$TEN_STRING
+        export OS_TENANT_ID=$TEN_STRING
+    fi
+}
+
