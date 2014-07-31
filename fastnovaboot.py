@@ -20,9 +20,25 @@ import time
 import pprint
 import argparse
 import json
+import socket
 import sys
 
 import util
+
+
+def is_valid_ipv4_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+
+    return True
 
 
 i = util.logger.info
@@ -37,25 +53,33 @@ def get_free_floating_ips():
     return [ ip for ip in _nova().floating_ips.list()
              if ip.instance_id is None ]
 
+def get_free_floating_ip(ip):
+    for ii in get_free_floating_ips():
+        if ii.ip == ip:
+            return ii
+    raise util.NovaWrapperError("No free floating ip %s found" % ip)
+
+
+def allocate_floating_ip():
+    pool_name = _nova().floating_ip_pools.list()[0].name
+    i("Found pool %s, will try to allocate one floating IP from it"
+      % pool_name)
+    try:
+        _nova().floating_ips.create(pool=pool_name)
+    except Exception as e:
+        # TODO: check what exception this throws
+        util.logger.error("Most likely no more IPs in the pool %s"
+                           % pool_name)
+        raise e
 
 def dig_a_floating_ip():
     free_ips = get_free_floating_ips()
     if len(free_ips) == 0:
         i("There are no free allocated floating IPs. The script will attempt "
           "to get one from the first available pool.")
-        pool_name = _nova().floating_ip_pools.list()[0].name
-        i("Found pool %s, will try to allocate one floating IP from it"
-          % pool_name)
-        try:
-            _nova().floating_ips.create(pool=pool_name)
-        except Exception as e:
-            # TODO: check what exception this throws
-            util.logger.error("Most likely no more IPs in the pool %s"
-                               % pool_name)
-            raise e
+        allocate_floating_ip()
         free_ips = get_free_floating_ips()
-        i("A floating IP was allocated from the pool and will be assigned to"
-          "the new instance.")
+        i("A floating IP was allocated from the pool")
     return free_ips[0]
 
 
@@ -124,13 +148,16 @@ def get_args(args_list):
     help_groups = ("Space-separated list of host groups that you want the "
                    "host to belong. This is completely up to the user, and it "
                    "not checked for validity. ")
+    help_floatingip = ("Floating IP to assign after server boot. Not "
+                       "mandatory - if you don't supply, the script will try "
+                       "to find a free floating ip.")
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
     parser.add_argument('-i', '--image', help=help_image,
                         default=util.BASE_IMAGE)
     parser.add_argument('-f', '--flavor', help=help_flavor,
                         default=util.BASE_FLAVOR)
-
+    parser.add_argument('-l', '--floatingip', help=help_floatingip)
     parser.add_argument('-u', '--userdata', type=argparse.FileType('r'),
                         help=help_userdata)
 
@@ -161,9 +188,11 @@ def main(args_list):
     if args.meta:
         _meta_dict = json.loads(args.meta)
         if type(_meta_dict) != dict:
-            raise NovaWrapperError("the --meta parameter must be a json dict")
+            raise util.NovaWrapperError("the --meta parameter must be a json"
+                                       " dict")
         if len(_meta_dict) > 5:
-            raise NovaWrapperError("the meta dict can't have more than 5 items")
+            raise util.NovaWrapperError("the meta dict can't have more than 5"
+                                       " items")
         params['meta'] = _meta_dict
 
     if args.groups:
@@ -171,8 +200,17 @@ def main(args_list):
             params['meta'] = {}
         params['meta'][u'groups'] = ",".join(args.groups)
         if len(params['meta']) > 5:
-            raise NovaWrapperError("the meta dict can't have more than 5 "
-                                   "items, including the group item")
+            raise util.NovaWrapperError("the meta dict can't have more than 5 "
+                                       "items, including the group item")
+
+    if args.floatingip:
+        if not is_valid_ipv4_address(args.floatingip):
+            raise util.NovaWrapperError("%s is not a valid ipv4" %
+                                       args.floatingip)
+        i("Checking if ip %s is available" % args.floatingip)
+        while args.floatingip not in [ii.ip for ii in get_free_floating_ips()]:
+            i("ip not available, trying to allocate another from the pool")
+            allocate_floating_ip()
 
     i("Launching new server with parameters:\n%s" % pprint.pformat(params))
 
@@ -197,15 +235,18 @@ def main(args_list):
                 i("Server in weird status: %s" % status)
             time.sleep(1)
 
+        if args.floatingip:
 
-        free_ip = dig_a_floating_ip()
+            assigned_ip = get_free_floating_ip(args.floatingip)
+        else:
+            assigned_ip = dig_a_floating_ip()
 
-        i("Assigning floating IP %s to the new server" % free_ip)
+        i("Assigning floating IP %s to the new server" % assigned_ip)
 
-        new_server.add_floating_ip(free_ip)
+        new_server.add_floating_ip(assigned_ip)
 
         util.callCheck("nova show " + new_server.id)
-        return (new_server.image['id'], free_ip.ip)
+        return (new_server.image['id'], assigned_ip.ip)
 
 
 if __name__ == '__main__':
