@@ -22,6 +22,7 @@ import argparse
 import json
 import socket
 import sys
+import os
 
 import util
 
@@ -47,6 +48,7 @@ d = util.logger.debug
 
 _nova = util.NovaProxy
 _glance = util.GlanceProxy
+_neutron = util.NeutronProxy
 
 
 def get_free_floating_ips():
@@ -101,13 +103,29 @@ def server_has_a_fixed_ip(server_id):
             return True
     return False
 
-def find_resource_id_by_name(name, resource_list):
+
+def add_security_groups(server_id, secgroup_ids):
+    i("about to get list of ports of the new server (netron call)")
+    port_list = _neutron().list_ports(device_id=server_id)
+    port_list = port_list['ports']
+    for port in port_list:
+        i("about to add security groups %s to the new server" % secgroup_ids)
+        _neutron().update_port(port['id'], body={'port': {'security_groups':secgroup_ids}})
+
+
+def find_resource_id_by_name(name, resource_list, use_getitem=False,
+                             subitem=None):
     try:
         uuid.UUID(name)
         # name is uuid
         return name
     except ValueError:
-        matching = [r.id for r in resource_list() if name in r.name]
+        if subitem:
+            resource_list = resource_list[subitem]
+        if use_getitem:
+            matching = [r['id'] for r in resource_list if name == r['name']]
+        else:
+            matching = [r.id for r in resource_list if name == r.name]
         if len(matching) == 0:
             msg = ("Could not find any resource matching name '%s'. "
                    "If this is an image, check that it's public or shared "
@@ -143,11 +161,8 @@ def get_args(args_list):
     help_flavor = ("name of flavor ($ nova flavor-list'). If you pass "
                    "non-uuid string, it will be substring matched to names "
                    "of existing flavors.")
-    help_secgroups = ("Space-separated list of security groups which in which "
-                      "the instance should be. There are exact names.")
-    help_groups = ("Space-separated list of host groups that you want the "
-                   "host to belong. This is completely up to the user, and it "
-                   "not checked for validity. ")
+    help_secgroups = ("comma-separated list of security groups which in which "
+                      "the instance should be.")
     help_floatingip = ("Floating IP to assign after server boot. Not "
                        "mandatory - if you don't supply, the script will try "
                        "to find a free floating ip.")
@@ -163,10 +178,9 @@ def get_args(args_list):
 
     parser.add_argument('-t', '--test', default=False, action="store_true",
                         help=help_test)
-    parser.add_argument('-s', '--secgroups', nargs='+', help=help_secgroups,
-                        default=util.BASE_SECGROUPS)
+    parser.add_argument('-s', '--secgroups', help=help_secgroups,
+                        required=True)
     parser.add_argument('-m', '--meta', help=help_meta)
-    parser.add_argument('-g', '--groups', help=help_groups, nargs='+')
 
     return parser.parse_args(args_list)
 
@@ -174,16 +188,15 @@ def get_args(args_list):
 def main(args_list):
     args = get_args(args_list)
 
-    _image  = find_resource_id_by_name(args.image, _glance().images.list)
-    _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list)
+    _image  = find_resource_id_by_name(args.image, _glance().images.list())
+    _flavor = find_resource_id_by_name(args.flavor, _nova().flavors.list())
 
     if args.test:
         print "args are"
         print args
 
     params = {'name': args.name, 'image': _image, 'flavor': _flavor,
-              'key_name': util.KEYPAIR, 'userdata': args.userdata,
-              'security_groups': args.secgroups}
+              'key_name': util.KEYPAIR, 'userdata': args.userdata}
 
     if args.meta:
         _meta_dict = json.loads(args.meta)
@@ -194,14 +207,6 @@ def main(args_list):
             raise util.NovaWrapperError("the meta dict can't have more than 5"
                                        " items")
         params['meta'] = _meta_dict
-
-    if args.groups:
-        if 'meta' not in params:
-            params['meta'] = {}
-        params['meta'][u'groups'] = ",".join(args.groups)
-        if len(params['meta']) > 5:
-            raise util.NovaWrapperError("the meta dict can't have more than 5 "
-                                       "items, including the group item")
 
     if args.floatingip:
         if not is_valid_ipv4_address(args.floatingip):
@@ -222,6 +227,7 @@ def main(args_list):
         new_server = _nova().servers.create(**params)
         i("Created new server with id " + new_server.id)
 
+
         i("About to assign a floating IP. For that, we need to wait till "
           "the vm will show a fixed IP address..")
 
@@ -236,7 +242,6 @@ def main(args_list):
             time.sleep(1)
 
         if args.floatingip:
-
             assigned_ip = get_free_floating_ip(args.floatingip)
         else:
             assigned_ip = dig_a_floating_ip()
@@ -244,6 +249,17 @@ def main(args_list):
         i("Assigning floating IP %s to the new server" % assigned_ip)
 
         new_server.add_floating_ip(assigned_ip)
+
+        secgroup_ids = []
+        all_sgs = _neutron().list_security_groups(
+            tenant_id=os.environ['OS_TENANT_ID'])
+        for sg in args.secgroups.split(','):
+            sgid  = find_resource_id_by_name(sg, all_sgs,
+                       use_getitem=True, subitem='security_groups')
+            secgroup_ids.append(sgid)
+
+        add_security_groups(new_server.id, secgroup_ids)
+
 
         util.callCheck("nova show " + new_server.id)
         return (new_server.image['id'], assigned_ip.ip)

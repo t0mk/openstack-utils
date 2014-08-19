@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+import util
+import os
+import pprint
+
+_neutron = util.NeutronProxy
+
+for g in _neutron().list_security_groups(
+         tenant_id=os.environ['OS_TENANT_ID'])['security_groups']:
+    print g['name'], g['id']
+
