@@ -1,3 +1,21 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+
+- [openstack-utils](#openstack-utils)
+  - [Installation](#installation)
+  - [fastnovaboot](#fastnovaboot)
+  - [ansible-spawn](#ansible-spawn)
+  - [managesecgroup](#managesecgroup)
+  - [ndeletevms](#ndeletevms)
+  - [nssh](#nssh)
+  - [tenant-switch](#tenant-switch)
+  - [Usage](#usage)
+    - [Basic workflow](#basic-workflow)
+    - [Workflow with ansible](#workflow-with-ansible)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # openstack-utils
 
 utilities that help me to cope with the OpenStack
@@ -10,6 +28,26 @@ git clone https://github.com/t0mk/openstack-utils
 echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.zshrc
 # echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.bashrc
 ```
+
+Each of the tool will print info on the --help switch.
+
+## fastnovaboot
+More convenient spawning. You can specify image, flavor, floatingip, security groups.
+
+## ansible-spawn
+Boot VM and run ansible playbook on it. It run fastnovaboot and can take parameters of fastnovaboot too.
+
+## managesecgroup
+Creates and edits security groups easier.
+
+## ndeletevms
+Delete vms mathcing a substring.
+
+## nssh
+Ssh to a machine based on a substring of it's nova name. If name of the vm is `appserver-2f3d`, you can ssh there as `$ nssh 2f3d`.
+
+## tenant-switch
+Source this script in your .zshrc (.bashrc) and change the current tenant name (OS_TENANT_ID) just on `$ t [Enter]`.
 
 ## Usage
 
@@ -56,7 +94,7 @@ if you don't specify image, you will be shown image list and you can choose inte
 
 ```
 [...]
-INFO:os_utils: About to run fastnovaboot with args: ['-n', 'spawntest-4540']
+INFO:os_utils: About to run fastnovaboot with args: ['-n', 'spawntest-4540']:
 INFO:os_utils: Launching new server with parameters:
 {'flavor': u'9cfdfdfe-36e4-4458-b17a-e864df8baee6',
  'image': 'db93d1ac-308e-43c5-acaa-666553b606a7',
