@@ -6,6 +6,7 @@ function t {
     TEN_STRING=""
     echo "which tenant:"
     echo " * [p]rovisiontest"
+    echo " * [n]agiostest"
     echo " * [d]igile"
     echo " * digile-[t]esting"
     echo " * p[l]aza-testing"
@@ -19,6 +20,7 @@ function t {
       ('l'|'L') TEN_STRING="plaza-testing";;
       ('e'|'E') TEN_STRING="plaza-devel";;
       ('j'|'J') TEN_STRING="julkictlabpalveluvayla";;
+      ('n'|'N') TEN_STRING="nagiostest";;
       (*) echo "Invalid choice" ;;
     esac
     if [ -n "$TEN_STRING" ]; then
