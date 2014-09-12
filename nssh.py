@@ -65,6 +65,8 @@ def get_ssh_user(image_id):
         ssh_user = 'cloud-user'
     if 'debian' in  image_name.lower():
         ssh_user = 'debian'
+    if 'core' in  image_name.lower():
+        ssh_user = 'core'
     return ssh_user
 
 
