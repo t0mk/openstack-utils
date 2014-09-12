@@ -82,7 +82,7 @@ You can also do `$ nssh` without parameters. It will list instances in current t
 
 ### Workflow with ansible
 
-Using _ansiblespawn_:
+Using _ansible-spawn_:
 
 with an example playbook showissue.yml:
 ```yaml
@@ -93,7 +93,7 @@ with an example playbook showissue.yml:
 then spawn an instance and run playbook on it as
 
 ```
-$ ansiblespawn -i db93d1ac-308e-43c5-acaa-666553b606a7 -p showissue.yml
+$ ansible-spawn -i db93d1ac-308e-43c5-acaa-666553b606a7 -p showissue.yml
 ```
 
 if you don't specify image, you will be shown image list and you can choose interactively
@@ -133,4 +133,4 @@ PLAY RECAP ********************************************************************
 [...]
 
 $ ndeletemvs 4540
-```
+``
