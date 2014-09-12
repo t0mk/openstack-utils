@@ -45,6 +45,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger.setLevel(logging.DEBUG)
 
+reuse_proxies = True
 
 class NovaWrapperError(Exception):
     pass
@@ -55,7 +56,7 @@ class AnsibleWrapperError(Exception):
 class KeystoneProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
-        if not cls._client:
+        if not cls._client or not reuse_proxies:
             cls._client = keystoneclient.v2_0.client.Client(
             username=_USERNAME, password=_PASSWORD,
             tenant_name=_TENANT, auth_url=_AUTH_URL
@@ -66,7 +67,7 @@ class KeystoneProxy(object):
 class NovaProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
-        if not cls._client:
+        if not cls._client or not reuse_proxies:
             # nova client cant be create from Keystone catalog URL ...
             cls._client = novaclient.v1_1.client.Client(
                 username=_USERNAME, api_key=_PASSWORD,
@@ -77,7 +78,7 @@ class NovaProxy(object):
 class GlanceProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
-        if not cls._client:
+        if not cls._client or not reuse_proxies:
             # Glance client can be created from Keystone catalog URL
             endpoints  = KeystoneProxy().service_catalog.get_endpoints()
             url = endpoints["image"][0]["publicURL"]
@@ -89,7 +90,7 @@ class GlanceProxy(object):
 class NeutronProxy(object):
     _client = None
     def __new__(cls, *args, **kwargs):
-        if not cls._client:
+        if not cls._client or not reuse_proxies:
             endpoints  = KeystoneProxy().service_catalog.get_endpoints()
             url = endpoints["network"][0]["publicURL"]
             cls._client = neutronclient.neutron.client.Client(
