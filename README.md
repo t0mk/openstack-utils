@@ -4,12 +4,14 @@
 
 - [openstack-utils](#openstack-utils)
   - [Installation](#installation)
-  - [fastnovaboot](#fastnovaboot)
-  - [ansible-spawn](#ansible-spawn)
-  - [managesecgroup](#managesecgroup)
-  - [ndeletevms](#ndeletevms)
-  - [nssh](#nssh)
-  - [tenant-switch](#tenant-switch)
+  - [Tools description](#tools-description)
+    - [fastnovaboot](#fastnovaboot)
+    - [ansible-spawn](#ansible-spawn)
+    - [managesecgroup](#managesecgroup)
+    - [ndeletevms](#ndeletevms)
+    - [nssh](#nssh)
+    - [tenant-switch](#tenant-switch)
+    - [build\_cache.py](#build\_cachepy)
   - [Usage](#usage)
     - [Basic workflow](#basic-workflow)
     - [Workflow with ansible](#workflow-with-ansible)
@@ -28,26 +30,30 @@ git clone https://github.com/t0mk/openstack-utils
 echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.zshrc
 # echo 'PATH=${PATH}:~/bin/openstack-utils' >> ~/.bashrc
 ```
+## Tools description
 
 Each of the tool will print info on the --help switch.
 
-## fastnovaboot
+### fastnovaboot
 More convenient spawning. You can specify image, flavor, floatingip, security groups.
 
-## ansible-spawn
+### ansible-spawn
 Boot VM and run ansible playbook on it. It run fastnovaboot and can take parameters of fastnovaboot too.
 
-## managesecgroup
+### managesecgroup
 Creates and edits security groups easier.
 
-## ndeletevms
+### ndeletevms
 Delete vms mathcing a substring.
 
-## nssh
+### nssh
 Ssh to a machine based on a substring of it's nova name. If name of the vm is `appserver-2f3d`, you can ssh there as `$ nssh 2f3d`.
 
-## tenant-switch
+### tenant-switch
 Source this script in your .zshrc (.bashrc) and change the current tenant name (OS_TENANT_ID) just on `$ t [Enter]`.
+
+### build\_cache.py
+Creates cache of resources lists in local filesystem. This can be used for example in auto-completion with https://github.com/t0mk/oh-my-zsh-openstack
 
 ## Usage
 
