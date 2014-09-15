@@ -5,7 +5,7 @@
 # OpenStack credentials to environment variables.
 
 # put this in yout crontab to run each 5 minutes as
-*/5 * * * * . /home/tomk/os/openrc.sh && /home/tomk/bin/openstack-utils/build_cache.py
+# */5 * * * * . /home/tomk/os/openrc.sh && /home/tomk/bin/openstack-utils/build_cache.py
 
 import util
 import errno
