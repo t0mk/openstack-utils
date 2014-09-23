@@ -8,13 +8,16 @@
 # */5 * * * * . /home/tomk/os/openrc.sh && /home/tomk/bin/openstack-utils/build_cache.py
 
 import util
+import json
 import errno
 import os
+import sys
 
 CACHE_DIR = '/tmp/os_cache'
 INSTANCES_CACHE_FILE = CACHE_DIR + '/instances_%s'
 SECGROUPS_CACHE_FILE = CACHE_DIR + '/secgroups_%s'
 IMAGES_CACHE_FILE = CACHE_DIR + '/images_%s'
+TENANTS = ['provisiontest', 'digile']
 
 
 def getAddrs(vm):
@@ -38,24 +41,25 @@ def mkdirp(path):
         else:
             raise
 
-mkdirp(CACHE_DIR)
+def main(args_list):
+    mkdirp(CACHE_DIR)
 
-TENANTS = ['provisiontest', 'digile']
+    util.reuse_proxies = False
 
-util.reuse_proxies = False
-
-for t in TENANTS:
-    util._TENANT = t
-    _nova_prox = util.NovaProxy()
-    with open(INSTANCES_CACHE_FILE % t, 'w') as f:
-        for s in _nova_prox.servers.list():
-            f.write("%s %s %s\n" % (s.id, s.name, getAddrs(s)))
-    with open(SECGROUPS_CACHE_FILE % t, 'w') as f:
-        for g in _nova_prox.security_groups.list():
-            f.write("%s %s\n" % (g.name, g.description.replace(' ','_')))
-    _glance_prox = util.GlanceProxy()
-    with open(IMAGES_CACHE_FILE % t, 'w') as f:
-        for i in _glance_prox.images.list():
-            f.write("%s %s\n" % (i.id, i.name.replace(' ','_')))
+    for t in TENANTS:
+        util._TENANT = t
+        _nova_prox = util.NovaProxy()
+        with open(INSTANCES_CACHE_FILE % t, 'w') as f:
+            for s in _nova_prox.servers.list():
+                f.write("%s %s %s\n" % (s.id, s.name, json.dumps(getAddrs(s))))
+        with open(SECGROUPS_CACHE_FILE % t, 'w') as f:
+            for g in _nova_prox.security_groups.list():
+                f.write("%s %s\n" % (g.name, g.description.replace(' ','_')))
+        _glance_prox = util.GlanceProxy()
+        with open(IMAGES_CACHE_FILE % t, 'w') as f:
+            for i in _glance_prox.images.list():
+                f.write("%s %s\n" % (i.id, i.name.replace(' ','_')))
 
 
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
