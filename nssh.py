@@ -110,8 +110,12 @@ def get_args(args_list):
 
     parser.add_argument('instance_name', nargs='?',
                         help='name of instance to ssh to')
-
+    help_download = 'Download file from remote machine to cwd'
+    help_upload = 'Upload file from local machine to homedir in remote machine'
     parser.add_argument('-u','--user', help='user for ssh')
+    parser.add_argument('-l','--upload', help=help_upload, metavar='local_file')
+    parser.add_argument('-d','--download', help=help_download,
+                        metavar='remote_file')
     parser.add_argument('-p','--printhostname', help=help_printhostname,
                         action='store_true')
     parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
@@ -124,6 +128,9 @@ def get_args(args_list):
 def main(args_list):
     args = get_args(args_list)
     vm = None
+
+    if args.download and args.upload:
+        raise util.NovaWrapperError('You can either upload or download.')
 
     if not args.instance_name:
         vm = ask()
@@ -142,7 +149,7 @@ def main(args_list):
 
         vm = matching_vms[0]
 
-    i("Will attempt to ssh to instance %s" % vm)
+    i("Will attempt to reach sshd on instance %s" % vm)
 
     if not args.user:
         ssh_user = get_ssh_user(vm.image['id'])
@@ -158,8 +165,15 @@ def main(args_list):
     if args.test:
         return test_ssh_connection(ssh_user, fip.ip)
     else:
-        ssh_cmd = "ssh -X -i %s %s@%s" % (util.PRIVKEY_FILE, ssh_user, fip.ip)
-        util.callCheck(ssh_cmd)
+        if args.upload:
+            cmd = "scp -i %s %s %s@%s:" % (util.PRIVKEY_FILE, args.upload,
+                                           ssh_user, fip.ip)
+        elif args.download:
+            cmd = "scp -i %s %s@%s:%s ./" % (util.PRIVKEY_FILE, ssh_user,
+                                             fip.ip, args.download)
+        else:
+            cmd = "ssh -X -i %s %s@%s" % (util.PRIVKEY_FILE, ssh_user, fip.ip)
+        util.callCheck(cmd)
 
     return 0
 
