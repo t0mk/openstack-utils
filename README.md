@@ -12,6 +12,7 @@
     - [nssh](#nssh)
     - [tenant-switch](#tenant-switch)
     - [build\_cache.py](#build\_cachepy)
+    - [n](#n)
   - [Usage](#usage)
     - [Basic workflow](#basic-workflow)
     - [Workflow with ansible](#workflow-with-ansible)
@@ -54,6 +55,10 @@ Source this script in your .zshrc (.bashrc) and change the current tenant name (
 
 ### build\_cache.py
 Creates cache of resources lists in local filesystem. This can be used for example in auto-completion with https://github.com/t0mk/oh-my-zsh-openstack
+
+### n
+This is a utility displaying list of virtual machines from current tenants from cache. It's like "nova boot" but faster and shorter.
+
 
 ## Usage
 
