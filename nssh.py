@@ -102,8 +102,8 @@ def get_args(args_list):
     parser = argparse.ArgumentParser(
         description='smart ssh to a nova instance')
 
-    help_nosshcheck = ('Dont check if machine has port 22 open in some '
-                       'security group.')
+    help_sshcheck = ('Check if machine has port 22 open in some '
+                     'security group.')
 
     help_test = ('Just check if the ssh connection can be open, and quit.')
     help_printhostname = ('just print Forge hostname of the instance')
@@ -118,7 +118,7 @@ def get_args(args_list):
                         metavar='remote_file')
     parser.add_argument('-p','--printhostname', help=help_printhostname,
                         action='store_true')
-    parser.add_argument('-n', '--nosshcheck', help=help_nosshcheck,
+    parser.add_argument('-s', '--sshcheck', help=help_sshcheck,
                         action='store_true')
     parser.add_argument('-t', '--test', help=help_test, action='store_true')
 
@@ -158,7 +158,7 @@ def main(args_list):
 
     fip = get_floating_ip_of_instance(vm.id)
 
-    if not args.nosshcheck:
+    if args.sshcheck:
         if not check_port_open(vm, 22):
             raise util.NovaWrapperError("Port 22 is not open in any security "
                                         "group in the machine.")
