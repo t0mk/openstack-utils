@@ -13,11 +13,12 @@ cache_file = build_cache.INSTANCES_CACHE_FILE % os.environ['OS_TENANT_NAME']
 def main(args_list):
     with open(cache_file, 'r') as f:
         for l in f:
-            fields = l.strip().split(' ', 2)
-            float_ip = json.loads(fields[2])['floating']
+            before_ips = l.find('{')
+            uid, name = l[:before_ips].strip().split(' ', 1)
+            float_ip = json.loads(l[before_ips:])['floating']
             if not float_ip:
                 float_ip = '[NO_PUBLIC_IPS]'
-            print fields[0], float_ip , fields[1]
+            print uid, float_ip, name
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
