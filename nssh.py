@@ -159,6 +159,7 @@ def main(args_list):
     fip = get_floating_ip_of_instance(vm.id)
 
     if args.sshcheck:
+        i('checking if SSH is open in some secgroup')
         if not check_port_open(vm, 22):
             raise util.NovaWrapperError("Port 22 is not open in any security "
                                         "group in the machine.")
