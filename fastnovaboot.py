@@ -105,7 +105,7 @@ def server_has_a_fixed_ip(server_id):
 
 
 def add_security_groups(server_id, secgroup_ids):
-    i("about to get list of ports of the new server (netron call)")
+    i("about to get list of ports of the new server (neutron call)")
     port_list = _neutron().list_ports(device_id=server_id)
     port_list = port_list['ports']
     for port in port_list:
@@ -163,9 +163,9 @@ def get_args(args_list):
                    "of existing flavors.")
     help_secgroups = ("comma-separated list of security groups which in which "
                       "the instance should be.")
-    help_floatingip = ("Floating IP to assign after server boot. Not "
-                       "mandatory - if you don't supply, the script will try "
-                       "to find a free floating ip.")
+    help_floatingip = ("Floating IP or FQDN of a floating IP to assign after "
+                       "server boot. Not mandatory - if you don't supply, the "
+                       "script will try to find a free floating ip.")
 
     parser.add_argument('-n', '--name', help=help_name, default=_name)
     parser.add_argument('-i', '--image', help=help_image,
@@ -210,7 +210,12 @@ def main(args_list):
 
     if args.floatingip:
         if not is_valid_ipv4_address(args.floatingip):
-            raise util.NovaWrapperError("%s is not a valid ipv4" %
+            try:
+                orig_name = args.floatingip
+                args.floatingip = socket.gethostbyname(args.floatingip)
+                i("FQDN %s has IP address %s" % (orig_name, args.floatingip))
+            except socket.gaierror:
+                raise util.NovaWrapperError("name %s does not DNS translate" %
                                        args.floatingip)
         i("Checking if ip %s is available" % args.floatingip)
         while args.floatingip not in [ii.ip for ii in get_free_floating_ips()]:

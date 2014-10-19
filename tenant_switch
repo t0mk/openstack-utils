@@ -12,6 +12,8 @@ function t {
     echo " * p[l]aza-testing"
     echo " * plaza-d[e]vel"
     echo " * [j]ulkictlabpalveluvayla"
+    echo " * demo_project_[1]"
+    echo " * demo_project_[2]"
     read ten
     case $ten in
       ('p'|'P') TEN_STRING="provisiontest" ;;
@@ -21,6 +23,8 @@ function t {
       ('e'|'E') TEN_STRING="plaza-devel";;
       ('j'|'J') TEN_STRING="julkictlabpalveluvayla";;
       ('n'|'N') TEN_STRING="nagiostest";;
+      ('1') TEN_STRING="demo_project_1";;
+      ('2') TEN_STRING="demo_project_2";;
       (*) echo "Invalid choice" ;;
     esac
     if [ -n "$TEN_STRING" ]; then
