@@ -2,6 +2,7 @@
 # source <path_here>/os_switch
 # to switch openstack env in shell, just do e[Enter]
 
+O='PROD'
 function e {
     A=""
     echo "which envrionment:"
@@ -9,11 +10,12 @@ function e {
     echo " * [t]esting"
     read i
     case $i in
-      ('p'|'P') A="https://cloud.forgeservicelab.fi:5001/v2.0" ;;
-      ('t'|'T') A="https://forge-test.csc.fi:5001/v2.0";;
+      ('p'|'P') A="https://cloud.forgeservicelab.fi:5001/v2.0"; O='PROD' ;;
+      ('t'|'T') A="https://forge-test.csc.fi:5001/v2.0"; O='TEST';;
       (*) echo "Invalid choice" ;;
     esac
     if [ -n "$A" ]; then
+        export O
         export OS_AUTH_URL=$A
     fi
 }
