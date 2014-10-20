@@ -7,6 +7,8 @@
 # put this in yout crontab to run each 5 minutes as
 # */5 * * * * . /home/tomk/os/openrc.sh && /home/tomk/bin/openstack-utils/build_cache.py
 
+# needs python-{nova,glance}client
+
 import util
 import json
 import errno
