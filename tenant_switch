@@ -5,6 +5,7 @@
 function t {
     TEN_STRING=""
     echo "which tenant:"
+    echo " * t[r]aining"
     echo " * [p]rovisiontest"
     echo " * [n]agiostest"
     echo " * [d]igile"
@@ -16,6 +17,7 @@ function t {
     echo " * demo_project_[2]"
     read ten
     case $ten in
+      ('r'|'R') TEN_STRING="training" ;;
       ('p'|'P') TEN_STRING="provisiontest" ;;
       ('d'|'D') TEN_STRING="digile";;
       ('t'|'T') TEN_STRING="digile-testing";;
