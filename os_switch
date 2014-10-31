@@ -8,10 +8,12 @@ function e {
     echo "which envrionment:"
     echo " * [p]roduciton"
     echo " * [t]esting"
+    echo " * [d]evel"
     read i
     case $i in
       ('p'|'P') A="https://cloud.forgeservicelab.fi:5001/v2.0"; O='PROD' ;;
       ('t'|'T') A="https://forge-test.csc.fi:5001/v2.0"; O='TEST';;
+      ('D'|'d') A="https://forge-devel.csc.fi:5001/v2.0"; O='DEVEL';;
       (*) echo "Invalid choice" ;;
     esac
     if [ -n "$A" ]; then
