@@ -29,7 +29,7 @@ BASE_FLAVOR = 'm1.tiny'
 BASE_SECGROUPS = 'default'
 
 # path to file with private key for your openstack keypair
-PRIVKEY_FILE = '/home/tomk/keys/tkarasek_key.pem'
+PRIVKEY_FILE = os.path.expanduser("~/keys/tkarasek_key.pem")
 
 # openstack variables
 _USERNAME = os.environ['OS_USERNAME']
