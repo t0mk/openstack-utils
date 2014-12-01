@@ -61,11 +61,14 @@ def get_ssh_user(image_id):
 
     if 'ubuntu' in image_name.lower():
         ssh_user = 'ubuntu'
-    if 'centos' in  image_name.lower():
-        ssh_user = 'cloud-user'
-    if 'debian' in  image_name.lower():
+    elif 'centos' in  image_name.lower():
+        if '7' in image_name.lower():
+            ssh_user = 'centos'
+        else:
+            ssh_user = 'cloud-user'
+    elif 'debian' in  image_name.lower():
         ssh_user = 'debian'
-    if 'core' in  image_name.lower():
+    elif 'core' in  image_name.lower():
         ssh_user = 'core'
     return ssh_user
 
